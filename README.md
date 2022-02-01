@@ -37,9 +37,9 @@ Authors:
    2. The application can also be started by clicking on the file itself in the file explorer.
 2. Ubuntu/Debian/Windows Git-Bash: [start.sh](start.sh)
 3. Each script will call `main.py` using the python virtual environment setup.
-4. Open the landing page to begin interacting with the Frontend / client side
+4. HTTP Routes can be querried using the following base url:
    1. `http://localhost:31025/`
-   2. When the server starts it will also print this url in case port 8080 is taken
+   2. When the server starts it will also print this url in case port 31025 is taken
 5. **NOTE On Windows:**
    1. The first time the program is run, Windows Firewall might block the application, please click "Allow Access". This issue should not happen again.
    2. When ending the program please do `Ctrl+C` then respond to `Terminate batch job (Y/N)?` with `y` and click enter.
