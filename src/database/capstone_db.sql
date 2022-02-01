@@ -1,10 +1,10 @@
 -- SpotASpot Database Creation Code
 
-DROP DATABASE IF EXISTS SpotASpot;
+DROP DATABASE IF EXISTS SpotASpot_dev;
 
-CREATE DATABASE IF NOT EXISTS SpotASpot;
+CREATE DATABASE IF NOT EXISTS SpotASpot_dev;
 
-USE SpotASpot;
+USE SpotASpot_dev;
 
 DROP TABLE IF EXISTS readers;
 CREATE TABLE readers
