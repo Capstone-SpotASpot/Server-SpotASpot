@@ -1,3 +1,6 @@
+# Project Specific Ignores
+cs3200-venv/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -127,3 +130,7 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+
+# Remove stuff for testing that should not be submit
+src/database/test
