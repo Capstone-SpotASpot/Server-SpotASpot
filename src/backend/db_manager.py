@@ -55,8 +55,7 @@ class DB_Manager(ReaderDBManager, MobileAppDBManager):
         pass
 
 if __name__ == '__main__':
-    # TODO: change this name
-    parser = argparse.ArgumentParser(description="Library Database Python Connector")
+    parser = argparse.ArgumentParser(description="Database Python Connector")
     parser.add_argument(
         "-u", "--username",
         required=False,
@@ -76,8 +75,7 @@ if __name__ == '__main__':
     parser.add_argument(
         "-d", "--db",
         required=False,
-        # TODO: change this name
-        default="libsystem",
+        default="SpotASpot",
         dest="db_name",
         help="The name of the database to connect to"
     )

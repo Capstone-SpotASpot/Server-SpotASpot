@@ -2,8 +2,7 @@
 ::NOTE - This script will only work once the installation of the venv is completed using install.sh
 
 :: Get paths to everything
-:: TODO: Change this name
-Set virtualEnvironName=capstone-venv
+Set virtualEnvironName=SpotASpot-venv
 Set root_dir=%~dp0
 
 Set executePath="%root_dir%src\backend\main.py

@@ -1,11 +1,10 @@
--- Capstone Database Creation Code
+-- SpotASpot Database Creation Code
 
--- TODO: change this
-DROP DATABASE IF EXISTS capstone;
+DROP DATABASE IF EXISTS SpotASpot;
 
-CREATE DATABASE IF NOT EXISTS capstone;
+CREATE DATABASE IF NOT EXISTS SpotASpot;
 
-USE capstone;
+USE SpotASpot;
 
 DROP TABLE IF EXISTS readers;
 CREATE TABLE readers

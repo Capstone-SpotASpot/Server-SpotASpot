@@ -2,7 +2,7 @@
 @echo off
 
 :: TODO: Change venv name
-set virtualEnvironName=capstone-venv
+set virtualEnvironName=SpotASpot-venv
 :: get the directory the file is stored in using %~dp0
 set installDir=%~dp0
 

@@ -114,13 +114,11 @@ class WebApp(UserManager):
             is_validated = True
 
             if request.method == "GET":
-                # TODO: change name
-                return render_template('login.html', title="LibraryDB Login")
+                return render_template('login.html', title="SpotASpot Login")
             elif request.method == "POST" and not is_validated:
                 # unsuccessful login
                 flash("Invalid Username or Password!", "is-danger")
-                # TODO: change name
-                return render_template('login.html', title="LibraryDB Login")
+                return render_template('login.html', title="SpotASpot Login")
 
             elif request.method == "POST":
                 # username & pwd must be right at this point, so login
@@ -199,8 +197,7 @@ class WebApp(UserManager):
 
 if __name__ == '__main__':
 
-    # TODO: change name
-    parser = argparse.ArgumentParser(description="Start up a web app GUI for the Library DB App")
+    parser = argparse.ArgumentParser(description="Start up a web app GUI for the SpotASpot DB App")
     parser.add_argument(
         "-p", "--port",
         type=int,
@@ -245,8 +242,7 @@ if __name__ == '__main__':
     parser.add_argument(
         "-d", "--db",
         required=False,
-        # TODO: change this
-        default="capstone",
+        default="SpotASpot",
         dest="db",
         help="The name of the database to connect to"
     )

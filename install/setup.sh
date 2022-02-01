@@ -63,8 +63,7 @@ fi
 
 
 THIS_FILE_DIR="$(readlink -fm $0/..)"
-# TODO: Change venv name
-virtualEnvironName="capstone-venv"
+virtualEnvironName="SpotASpot-venv"
 rootDir="$(readlink -fm "${THIS_FILE_DIR}"/..)"
 srcDir="$(readlink -fm ${rootDir}/..)"
 backendDir="${srcDir}/backend"
