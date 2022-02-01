@@ -27,7 +27,7 @@ from db_manager import DB_Manager
 
 class WebApp(UserManager):
     def __init__(self, port: int, is_debug: bool, user: str, pwd: str, db: str, db_host: str):
-        self._app = Flask("LibraryDB")
+        self._app = Flask("SpotASpot_ServerApp")
         self._app.config["TEMPLATES_AUTO_RELOAD"] = True # refreshes flask if html files change
         self._app.config['SECRET_KEY'] = secrets.token_urlsafe(16)
 
