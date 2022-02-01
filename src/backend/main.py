@@ -232,6 +232,7 @@ if __name__ == '__main__':
         dest="db_user",
         help="The username for the Database"
     )
+
     parser.add_argument(
         "-pwd", "--password",
         required=False, # but if not provided asks for input
@@ -246,6 +247,16 @@ if __name__ == '__main__':
         dest="db",
         help="The name of the database to connect to"
     )
+
+    parser.add_argument(
+        "-dev", "--dev_db",
+        required=False,
+        action="store_const",
+        const="SpotASpot_dev",
+        dest="db",
+        help="Sets the name of the database to connect to as the dev database"
+    )
+
     parser.add_argument(
         "-dbh", "--database_host",
         required=False,
@@ -260,7 +271,7 @@ if __name__ == '__main__':
     # ask for input if password not given
     if args["pwd"] == None:
         pass_msg = "Enter the password for user '"
-        pass_msg += str(args["user"])
+        pass_msg += str(args["db_user"])
         pass_msg += "' for the database '"
         pass_msg += str(args["db"])
         pass_msg += "': "
