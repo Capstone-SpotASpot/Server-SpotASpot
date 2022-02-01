@@ -2,6 +2,9 @@
 Authors:
   - Matthew Rizzo - rizzo.ma@northeastern.edu
   - Nicholas Rizzo - rizzo.n@northeastern.edu
+  - Aman Kaur - kaur.am@northeastern.edu
+  - Annie Waye - waye.a@northeastern.edu
+  - Liz Woodwell - woodwell.e@northeastern.edu
 
 ## Creating and Running the Project
 * libraries - see [install/requirements.txt](install/requirements.txt)
