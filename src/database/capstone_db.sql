@@ -50,7 +50,8 @@ CREATE TABLE users
 DROP TABLE IF EXISTS tag;
 CREATE TABLE tag
 (
-    tag_id INT PRIMARY KEY AUTO_INCREMENT NOT NULL,
+    -- the id will get set by how the tag is programmed
+    tag_id INT PRIMARY KEY NOT NULL,
     car_pos ENUM('front', 'rear', 'middle')
 );
 
