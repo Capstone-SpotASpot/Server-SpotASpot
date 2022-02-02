@@ -43,7 +43,7 @@ CREATE TABLE users
     first_name VARCHAR(50) NOT NULL,
     last_name VARCHAR(50) NOT NULL,
     username VARCHAR(50) NOT NULL UNIQUE,
-    lib_password VARCHAR(50) NOT NULL
+    user_password VARCHAR(50) NOT NULL
 );
 
 -- Need the tag table so it can be a FK in the car table
@@ -155,6 +155,43 @@ CREATE TABLE detects
         REFERENCES observation_event (observation_id)
         ON UPDATE CASCADE ON DELETE CASCADE
 );
+
+
+-- ###### Start of Procedures ######
+
+DROP PROCEDURE IF EXISTS insert_user;
+DELIMITER $$
+CREATE PROCEDURE insert_user(
+  IN fname VARCHAR(50),
+  IN lname VARCHAR(50),
+  IN username VARCHAR(50),
+  IN pwd VARCHAR(50)
+) BEGIN
+
+  -- In case adding a user fails
+  DECLARE EXIT HANDLER FOR SQLEXCEPTION
+  BEGIN
+      ROLLBACK;
+  END;
+
+  START TRANSACTION;
+    INSERT INTO users(user_id, first_name, last_name, username, user_password)
+        VALUES (DEFAULT, fname, lname, username, MD5(pwd));
+
+  COMMIT;
+
+END $$ -- end of insert_user
+-- resets the DELIMETER
+DELIMITER ;
+
+
+
+-- ###### End of Procedures ######
+
+-- ###### Start of Functions ######
+
+-- ###### End of Functions ######
+
 
 INSERT INTO readers (longitude, latitude)
     VALUES (0.0, 0.0), (1.0, 1.0)
