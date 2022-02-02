@@ -4,12 +4,13 @@
 
 # Get paths to everything
 virtualEnvironName="SpotASpot-venv"
-rootDir="$(readlink -fm $0/../../../..)"
+rootDir="$(readlink -fm $0/../../../../..)"
 virtualEnvironDir="${rootDir}/${virtualEnvironName}"
 srcPath="${rootDir}/src"
-databasePath="${srcPath}/database"
+backendPath="${srcPath}/backend"
 testPath="${databasePath}/test"
-executePath="${testPath}/main_tester.py"
+databaseInterfacePath="${testPath}/database_interface"
+executePath="${databaseInterfacePath}/main_tester.py"
 setupScript="${rootDir}/install/setup.sh"
 
 # check OS... (decide how to call python)
