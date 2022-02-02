@@ -6,7 +6,7 @@
 
 ## Implementation TODO's
 * **procedures / funnctions**
-  - [ ] add_user
+  - [x] add_user
   - [ ] add_tag
   - [ ] add_car
   - [ ] add_spot
@@ -18,14 +18,14 @@
     - would get called by add_reader or add_spot??
     - or by application?
 * **Test calls/selects for procedures&functions** - could be aman?
-  - [ ] adding user
-  - [ ] adding tag
-  - [ ] adding car
-  - [ ] adding spot
-  - [ ] adding reader
-  - [ ] adding adjacent readers
-  - [ ] adding detection event
-  - [ ] adding reader covering spot
+  - [ ] test adding user
+  - [ ] test adding tag
+  - [ ] test adding car
+  - [ ] test adding spot
+  - [ ] test adding reader
+  - [ ] test adding adjacent readers
+  - [ ] test adding detection event
+  - [ ] test adding reader covering spot
 * `reader_db_manager.py` -> make API function to save data from reader to database
 * `mobile_app_db_manager.py` -> actually get status of spot from db
 * `mobile_app_db_manager.py` -> actually get ID's of readers within gps radius

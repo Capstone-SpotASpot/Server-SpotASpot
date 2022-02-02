@@ -1,12 +1,25 @@
 import argparse  # cli paths
 import getpass
-
+import typing
+from typing import Dict
 
 class CLISetup():
-    def __init__(self):
+    def __init__(self, valid_test: Dict):
         """Class to make adding CLI flags easy for ALL test classes Via inherinting them"""
         self.parser = argparse.ArgumentParser(
             description="Start up a connection the SpotASpot_dev DB")
+
+        test_name_msg = "Enter the name of the test to run (excluding .py). Enter 'ALL' to run all tests.\n"
+        test_name_msg += f"Choices = {list(valid_test.keys())}"
+        self.parser.add_argument(
+            "-t", "--testfile_name",
+            help=test_name_msg,
+            type=str,
+            dest="test",
+            action="store",
+            default="ALL",
+            choices=list(valid_test.keys())
+        )
 
         # defaults debugMode to false (only true if flag exists)
         self.parser.add_argument(
