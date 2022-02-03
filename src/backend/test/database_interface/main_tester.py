@@ -8,48 +8,44 @@ import logging  # used to disable printing of each POST/GET request
 import pathlib
 from pathlib import Path
 import secrets
+# Change this to have project includes
+sys.path.insert(0, os.path.abspath("../../"))
 
 #-----------------------------3RD PARTY DEPENDENCIES-----------------------------#
 import pymysql
 
 
 #--------------------------------Project Includes--------------------------------#
-from cli_setup import CLISetup
+from db_manager import DB_Manager
+from cli_parser import CLIParser
 from test_add_user import test_add_user
 
-class MainTester(CLISetup):
+
+class MainTester(CLIParser):
     def __init__(self):
         """Basic class to setup testing sql files. Will handle establishing a connection to the test database"""
         self.valid_tests = {
             "ALL" : "ALL",
             "add_user": test_add_user
         }
-        super().__init__(self.valid_tests)
 
-        try:
-            self.conn = pymysql.connect(
-                host=self.args['db_host'],
-                user=self.args['db_user'],
-                password=self.args['pwd'],
-                db=self.args['db'],
-                charset="utf8mb4",
-                cursorclass=pymysql.cursors.DictCursor
-            )
-            self.cursor = self.conn.cursor()
-        except Exception as err:
-            raise SystemExit(f"Invalid Database Login: {err}")
+        # Init CLI first, then DBManager
+        super().__init__(self.valid_tests)
+        print("Done Initializing CLI Parser")
+        self.db_manager = DB_Manager(self.args['db_user'], self.args['pwd'],
+                                self.args['db'], self.args['db_host'])
+
         if self.args['test'] == "ALL":
             print("Running all tests")
         else:
             print("Running test: " + self.args['test'] + ".py")
 
-            # All cb's take connection and cursor as params
+            # All cb's take db_manager obj as a param
             test_func_cb = self.valid_tests[self.args['test']]
-            test_func_cb(self.conn, self.cursor)
+            test_func_cb(self.db_manager)
 
         # Close all connnections
-        self.cursor.close()
-        self.conn.close()
+        self.db_manager.cleanup()
 
 if __name__ == '__main__':
     MainTester()
