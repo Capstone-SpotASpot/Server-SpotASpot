@@ -10,7 +10,7 @@ srcPath="${rootDir}/src"
 backendPath="${srcPath}/backend"
 testPath="${databasePath}/test"
 databaseInterfacePath="${testPath}/database_interface"
-executePath="${databaseInterfacePath}/main_tester.py"
+executePath="${databaseInterfacePath}/run_tests.py"
 setupScript="${rootDir}/install/setup.sh"
 
 # check OS... (decide how to call python)

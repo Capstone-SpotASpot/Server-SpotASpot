@@ -9,15 +9,17 @@ class CLIParser():
         self.parser = argparse.ArgumentParser(
             description="Start up a connection the SpotASpot_dev DB")
 
-        test_name_msg = "Enter the name of the test to run (excluding .py). Enter 'ALL' to run all tests.\n"
+        test_name_msg = "Enter the name of the test to run (excluding .py)."
+        test_name_msg += "Enter separated by spaces to run multiple files."
+        test_name_msg += "Enter 'ALL' to run all tests."
         test_name_msg += f"Choices = {list(valid_test.keys())}"
         self.parser.add_argument(
-            "-t", "--testfile_name",
+            "-t", "--testfile_list",
             help=test_name_msg,
-            type=str,
+            nargs='+',
+            default=['ALL'],
             dest="test",
             action="store",
-            default="ALL",
             choices=list(valid_test.keys())
         )
 
