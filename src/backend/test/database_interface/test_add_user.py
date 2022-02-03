@@ -37,7 +37,7 @@ def test_add_user(db_manager: DB_Manager) -> bool:
     except:
         did_pass = False
 
-    assert(did_pass)
+    assert(did_pass == True)
     print("test_add_user.........passed!")
     return True
 
