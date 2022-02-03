@@ -8,8 +8,8 @@
 * **procedures / funnctions**
   - [x] add_user
   - [x] add_tag
-    - [ ] update_tag_pos
-  - [ ] add_car
+  - [x] add_car
+    - [x] update_tag_pos
   - [ ] add_spot
   - [x] add_reader
     - [ ] also add_adjacent_reader???? as function that gets called

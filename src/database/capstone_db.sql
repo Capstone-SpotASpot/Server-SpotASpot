@@ -225,6 +225,38 @@ END $$
 -- resets the DELIMETER
 DELIMITER ;
 
+DROP PROCEDURE IF EXISTS add_car;
+DELIMITER $$
+-- adds a car element to the database
+-- & updates the tag table to include position on a car
+-- returns the id of the new car
+CREATE PROCEDURE add_car(
+  IN user_id_in INT,
+  IN tag_id_front INT,
+  IN tag_id_middle INT,
+  IN tag_id_rear INT
+) BEGIN
+  -- use transaction bc multiple inserts and should rollback on error
+  DECLARE created_car_id INT;
+  DECLARE EXIT HANDLER FOR SQLEXCEPTION
+  BEGIN
+    SHOW ERRORS;
+    ROLLBACK;
+  END;
+  START TRANSACTION; -- may need to rollback bc multiple inserts
+
+  -- leave car position blank as it will be filled in later
+  UPDATE tag SET car_pos = 'front' WHERE tag_id = tag_id_front;
+  UPDATE tag SET car_pos = 'middle' WHERE tag_id = tag_id_middle;
+  UPDATE tag SET car_pos = 'rear' WHERE tag_id = tag_id_rear;
+  INSERT INTO registered_cars (car_id, registering_user, front_tag, middle_tag, rear_tag)
+  VALUES (DEFAULT, user_id_in, tag_id_front, tag_id_middle, tag_id_rear);
+
+  COMMIT;
+END $$
+-- end of add_tag
+-- resets the DELIMETER
+DELIMITER ;
 
 -- ###### End of Procedures ######
 
