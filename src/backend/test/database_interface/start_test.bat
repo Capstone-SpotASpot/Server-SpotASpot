@@ -13,7 +13,7 @@ FOR %%P IN ("%src_dir%.") DO SET root_dir=%%~dpP
 
 echo %root_dir%
 
-Set executePath="%database_test_dir%main_tester.py
+Set executePath="%database_test_dir%run_tests.py
 Set virtualEnvironDir="%root_dir%%virtualEnvironName%
 Set venvPath=%virtualEnvironDir%\Scripts\python.exe"
 
