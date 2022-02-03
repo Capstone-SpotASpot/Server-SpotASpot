@@ -12,7 +12,8 @@ CREATE TABLE readers
 (
     reader_id INT PRIMARY KEY NOT NULL AUTO_INCREMENT,
     latitude FLOAT( 10, 6 ) NOT NULL,
-    longitude FLOAT( 10, 6 ) NOT NULL
+    longitude FLOAT( 10, 6 ) NOT NULL,
+    reader_range FLOAT NOT NULL -- range in meters
 );
 
 -- Create recursive reader relationship
@@ -157,6 +158,65 @@ CREATE TABLE detects
 );
 
 
+-- ###### Start of Functions ######
+
+
+
+DROP FUNCTION IF EXISTS calc_coord_dist;
+DELIMITER $$
+-- checks if two pts in 3D space are in range of each other
+-- given: latitude & longitude of both points & radius
+-- returns: true/false
+-- REF: https://stackoverflow.com/a/501224
+-- REF2: https://dev.mysql.com/blog-archive/spatial-reference-systems-in-mysql-8-0/
+CREATE FUNCTION calc_coord_dist (
+  long1 FLOAT (10,6),
+  lat1 FLOAT (10,6),
+  long2 FLOAT (10,6),
+  lat2 FLOAT (10,6)
+)
+  RETURNS FLOAT
+  DETERMINISTIC
+BEGIN
+  RETURN(ST_Distance(
+    ST_SRID(Point(lat1, long1), 4326),
+    ST_SRID(Point(lat2, long2), 4326)
+  ));
+END $$
+-- end of calc_coord_dist
+-- resets the DELIMETER
+DELIMITER ;
+
+
+DROP FUNCTION IF EXISTS are_coords_in_range;
+DELIMITER $$
+-- checks if two pts in 3D space are in range of each other
+-- given: latitude & longitude of both points & radius
+-- returns: true/false
+CREATE FUNCTION are_coords_in_range(
+  long1 FLOAT (10,6),
+  lat1 FLOAT (10,6),
+  long2 FLOAT (10,6),
+  lat2 FLOAT (10,6),
+  radius FLOAT
+)
+  RETURNS BOOLEAN
+  DETERMINISTIC
+BEGIN
+  DECLARE coord_dist FLOAT;
+  DECLARE is_in_range BOOLEAN;
+  SET coord_dist = (SELECT calc_coord_dist(long1, lat1, long2, lat2));
+  SET is_in_range = (SELECT coord_dist <= radius);
+  RETURN(is_in_range);
+END $$
+-- end of are_coords_in_range
+-- resets the DELIMETER
+DELIMITER ;
+
+-- ###### End of Functions ######
+
+
+
 -- ###### Start of Procedures ######
 
 DROP PROCEDURE IF EXISTS add_user;
@@ -194,14 +254,41 @@ DELIMITER ;
 
 DROP PROCEDURE IF EXISTS add_reader;
 DELIMITER $$
+
 CREATE PROCEDURE add_reader(
-  IN p_latitude FLOAT( 10, 6 ),
-  IN p_longitude FLOAT( 10, 6 )
+  IN p_reader_lat FLOAT( 10, 6 ),
+  IN p_reader_long FLOAT( 10, 6 ),
+  IN p_reader_range FLOAT
 ) BEGIN
+  DECLARE created_reader_id INT;
+  DECLARE EXIT HANDLER FOR SQLEXCEPTION
+  BEGIN
+    SHOW ERRORS;
+    ROLLBACK;
+  END;
+  START TRANSACTION;
 
-    INSERT INTO readers (reader_id, latitude, longitude )
-        VALUES (DEFAULT, p_latitude, p_longitude );
+  -- create the reader row
+  INSERT INTO readers (reader_id, latitude, longitude, reader_range)
+    VALUES (DEFAULT, p_reader_lat, p_reader_long, p_reader_range);
+  SET created_reader_id = LAST_INSERT_ID();
 
+  -- determine which spots are in range of the reader
+  -- TODO: check for antenna/reader direction??
+  INSERT INTO reader_coverage (covering_reader_id, spot_covered_id)
+  SELECT created_reader_id, parking_spot.spot_id
+  FROM parking_spot
+  WHERE (
+    SELECT are_coords_in_range(
+      p_reader_lat,
+      p_reader_long,
+      parking_spot.latitude,
+      parking_spot.longitude,
+      p_reader_range
+    )
+  );
+
+  COMMIT;
 END $$
 -- end of add_reader
 -- resets the DELIMETER
@@ -360,42 +447,7 @@ END $$
 DELIMITER ;
 
 
-DROP PROCEDURE IF EXISTS add_reader_coverage;
-DELIMITER $$
--- adds a reader coverage row to the association table in database
--- given: reader_id & the spot_id its covering
--- returns: created id
-CREATE PROCEDURE add_reader_coverage(
-  IN reader_id_in INT,
-  IN spot_covered_id_in INT
-
-) BEGIN  -- use transaction bc multiple inserts and should rollback on error
-  DECLARE coverage_id INT;
-  DECLARE EXIT HANDLER FOR SQLEXCEPTION
-  BEGIN
-    SHOW ERRORS;
-    ROLLBACK;
-  END;
-  START TRANSACTION; -- may need to rollback bc multiple inserts
-
-  INSERT INTO reader_coverage (coverage_id, covering_reader_id, spot_covered_id)
-  VALUES (DEFAULT, reader_id_in, spot_covered_id_in);
-
-  SET coverage_id = LAST_INSERT_ID();
-  SELECT coverage_id as 'coverage_id';
-
-  COMMIT;
-END $$
--- end of add_reader_coverage
--- resets the DELIMETER
-DELIMITER ;
-
 -- ###### End of Procedures ######
 
--- ###### Start of Functions ######
-
--- ###### End of Functions ######
-
-
-INSERT INTO readers (longitude, latitude)
-    VALUES (0.0, 0.0), (1.0, 1.0)
+INSERT INTO readers (longitude, latitude, reader_range)
+    VALUES (0.0, 0.0, 20), (1.0, 1.0, 20)
