@@ -11,7 +11,7 @@
   - [x] add_car
     - [x] update_tag_pos
   - [x] add_spot
-    - [ ] check if any existing reader is in range of this new spot
+    - [x] check if any existing reader is in range of this new spot
   - [x] add_reader
     - [x] add to reader_coverage association table based on new reader
     - [x] functions: are_coords_in_range() & calc_coord_dist()

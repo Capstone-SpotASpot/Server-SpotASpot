@@ -361,8 +361,8 @@ DELIMITER $$
 -- given: coordinates (longitude & latitude)
 -- returns: created spot's id
 CREATE PROCEDURE add_spot(
-  IN longitude_in float(10,6),
-  IN latitude_in float(10,6)
+  IN spot_long_in float(10,6),
+  IN spot_lat_in float(10,6)
 ) BEGIN  -- use transaction bc multiple inserts and should rollback on error
   DECLARE created_spot_id INT;
   DECLARE EXIT HANDLER FOR SQLEXCEPTION
@@ -373,9 +373,24 @@ CREATE PROCEDURE add_spot(
   START TRANSACTION; -- may need to rollback bc multiple inserts
 
   INSERT INTO parking_spot (spot_id, longitude, latitude, parked_car_id, time_since_parked)
-  VALUES (DEFAULT, longitude_in, latitude_in, NULL, NULL);
-
+  VALUES (DEFAULT, spot_long_in, spot_lat_in, NULL, NULL);
   SET created_spot_id = LAST_INSERT_ID();
+
+  -- determine if new spot is in range of an existing reader
+  -- TODO: check for antenna/reader direction??
+  INSERT INTO reader_coverage (covering_reader_id, spot_covered_id)
+  SELECT readers.reader_id, created_spot_id
+  FROM readers
+  WHERE (
+    SELECT are_coords_in_range(
+      readers.latitude,
+      readers.longitude,
+      spot_lat_in,
+      spot_long_in,
+      readers.reader_range
+    )
+  );
+
   SELECT created_spot_id as 'created_spot_id';
 
   COMMIT;
