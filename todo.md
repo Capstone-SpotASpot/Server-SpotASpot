@@ -10,7 +10,7 @@
   - [x] add_tag
   - [x] add_car
     - [x] update_tag_pos
-  - [ ] add_spot
+  - [x] add_spot
   - [x] add_reader
     - [ ] also add_adjacent_reader???? as function that gets called
       - for now keep it stand alone though

@@ -264,7 +264,36 @@ CREATE PROCEDURE add_car(
   SELECT created_car_id as 'created_car_id';
   COMMIT;
 END $$
--- end of add_tag
+-- end of add_car
+-- resets the DELIMETER
+DELIMITER ;
+
+DROP PROCEDURE IF EXISTS add_spot;
+DELIMITER $$
+-- adds a parking spot to the database
+-- given: coordinates (longitude & latitude)
+-- returns: created spot's id
+CREATE PROCEDURE add_spot(
+  IN longitude_in float(10,6),
+  IN latitude_in float(10,6)
+) BEGIN  -- use transaction bc multiple inserts and should rollback on error
+  DECLARE created_spot_id INT;
+  DECLARE EXIT HANDLER FOR SQLEXCEPTION
+  BEGIN
+    SHOW ERRORS;
+    ROLLBACK;
+  END;
+  START TRANSACTION; -- may need to rollback bc multiple inserts
+
+  INSERT INTO parking_spot (spot_id, longitude, latitude, parked_car_id, time_since_parked)
+  VALUES (DEFAULT, longitude_in, latitude_in, NULL, NULL);
+
+  SET created_spot_id = LAST_INSERT_ID();
+  SELECT created_spot_id as 'created_spot_id';
+
+  COMMIT;
+END $$
+-- end of add_spot
 -- resets the DELIMETER
 DELIMITER ;
 
