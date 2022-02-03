@@ -28,8 +28,7 @@ class MobileAppDBManager():
         \n:Return: True if add success, False otherwise """
         try:
             self.cursor.execute("call add_user(%s, %s, %s, %s)",
-                             first_name, last_name, username, pwd)
-            res = self.cursor.fetchall()
+                                (first_name, last_name, username, pwd))
             return True
         except:
             return False
