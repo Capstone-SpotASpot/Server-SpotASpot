@@ -161,6 +161,7 @@ CREATE TABLE detects
 
 DROP PROCEDURE IF EXISTS add_user;
 DELIMITER $$
+-- adds a user to the database and returns their id
 CREATE PROCEDURE add_user(
   IN fname VARCHAR(50),
   IN lname VARCHAR(50),
@@ -168,15 +169,21 @@ CREATE PROCEDURE add_user(
   IN pwd VARCHAR(50)
 ) BEGIN
 
+  DECLARE created_user_id INT;
   -- In case adding a user fails
   DECLARE EXIT HANDLER FOR SQLEXCEPTION
   BEGIN
-      ROLLBACK;
+    SHOW ERRORS;
+    ROLLBACK;
   END;
 
   START TRANSACTION;
-    INSERT INTO users(user_id, first_name, last_name, username, user_password)
-        VALUES (DEFAULT, fname, lname, username, MD5(pwd));
+
+  -- note: the username col is set to unique so duplicates wont happen
+  INSERT INTO users(user_id, first_name, last_name, username, user_password)
+    VALUES (DEFAULT, fname, lname, username, MD5(pwd));
+  SET created_user_id = LAST_INSERT_ID();
+  SELECT created_user_id as 'created_user_id';
 
   COMMIT;
 
