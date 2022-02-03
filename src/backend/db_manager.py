@@ -35,20 +35,12 @@ class DB_Manager(ReaderDBManager, MobileAppDBManager):
         except Exception as err:
             raise SystemExit(f"Invalid Database Login: {err}")
 
-        ReaderDBManager.__init__(self, user, pwd, db, host)
-        MobileAppDBManager.__init__(self, user, pwd, db, host)
+        ReaderDBManager.__init__(self, self.conn, self.cursor)
+        MobileAppDBManager.__init__(self, self.conn, self.cursor)
 
     def cleanup(self):
         self.cursor.close()
         self.conn.close()
-
-        # Clean up all DB Managers
-        self.reader_cleanup()
-        self.mobile_app_cleanup()
-
-    def add_user(self):
-        "Function to add a user. Right now it does nothing"
-        return 1
 
     def updatePwd(self):
         "WIP"

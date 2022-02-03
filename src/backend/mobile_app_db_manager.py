@@ -9,35 +9,30 @@ from xmlrpc.client import Boolean
 
 #-----------------------------3RD PARTY DEPENDENCIES-----------------------------#
 import pymysql
+from pymysql import connections, cursors
+from pymysql.cursors import Cursor
 
 #--------------------------------Project Includes--------------------------------#
 from gps import GPS
 
 class MobileAppDBManager():
-    def __init__(self, user: str, pwd: str, db: str, host: str) -> None:
+    def __init__(self, conn: pymysql.Connection, cursor: Cursor) -> None:
         """
             @brief: Used to implement all database management for the Mobile App to get info.
-            \n@param: user  - The username to connect to database with
-            \n@param: pwd   - The password to connect to database with
-            \n@param: db    - The name of the database to connect with
-            \n@param: host  - The IP/localhost of the database to connect with
         """
-        try:
-            self.conn = pymysql.connect(
-                host=host,
-                user=user,
-                password=pwd,
-                db=db,
-                charset="utf8mb4",
-                cursorclass=pymysql.cursors.DictCursor
-            )
-            self.cursor = self.conn.cursor()
-        except Exception as err:
-            raise SystemExit(f"Invalid Database Login: {err}")
+        self.conn = conn
+        self.cursor = cursor
 
-    def mobile_app_cleanup(self):
-        self.cursor.close()
-        self.conn.close()
+    def add_user(self, first_name, last_name, username, pwd)-> bool:
+        """Function to add a user
+        \n:Return: True if add success, False otherwise """
+        try:
+            self.cursor.execute("call add_user(%s, %s, %s, %s)",
+                             first_name, last_name, username, pwd)
+            res = self.cursor.fetchall()
+            return True
+        except:
+            return False
 
     def is_reader_taken(self, reader_id: int) -> Optional[bool]:
         """Given the reader's unique id, return if its spot is taken or not.
