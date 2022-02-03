@@ -461,6 +461,35 @@ END $$
 -- resets the DELIMETER
 DELIMITER ;
 
+DROP PROCEDURE IF EXISTS add_adjacent_reader;
+DELIMITER $$
+-- adds two readers as adjacent to one another in database
+-- given: reader_ids for both
+-- returns: created adjacency id
+CREATE PROCEDURE add_adjacent_reader(
+  IN reader1_in INT,
+  IN reader2_in INT
+) BEGIN  -- use transaction bc multiple inserts and should rollback on error
+  DECLARE created_adj_id INT;
+  DECLARE EXIT HANDLER FOR SQLEXCEPTION
+  BEGIN
+    SHOW ERRORS;
+    ROLLBACK;
+  END;
+  START TRANSACTION; -- may need to rollback bc multiple inserts
+
+  INSERT INTO adjacent_readers (adjacency_id, reader_one, reader_two)
+  VALUES (DEFAULT, reader1_in, reader2_in);
+
+  SET created_adj_id = LAST_INSERT_ID();
+  SELECT created_adj_id as 'created_adj_id';
+
+  COMMIT;
+END $$
+-- end of add_detection_event
+-- resets the DELIMETER
+DELIMITER ;
+
 
 -- ###### End of Procedures ######
 

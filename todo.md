@@ -15,8 +15,7 @@
   - [x] add_reader
     - [x] add to reader_coverage association table based on new reader
     - [x] functions: are_coords_in_range() & calc_coord_dist()
-    - [ ] also add_adjacent_reader???? as function that gets called
-      - for now keep it stand alone though
+    - [x] also add_adjacent_reader???? as procedure that gets called
   - [x] add_observation_event
   - [x] add_detection_event
 * **Test calls/selects for procedures&functions** - could be aman?
