@@ -359,6 +359,37 @@ END $$
 -- resets the DELIMETER
 DELIMITER ;
 
+
+DROP PROCEDURE IF EXISTS add_reader_coverage;
+DELIMITER $$
+-- adds a reader coverage row to the association table in database
+-- given: reader_id & the spot_id its covering
+-- returns: created id
+CREATE PROCEDURE add_reader_coverage(
+  IN reader_id_in INT,
+  IN spot_covered_id_in INT
+
+) BEGIN  -- use transaction bc multiple inserts and should rollback on error
+  DECLARE coverage_id INT;
+  DECLARE EXIT HANDLER FOR SQLEXCEPTION
+  BEGIN
+    SHOW ERRORS;
+    ROLLBACK;
+  END;
+  START TRANSACTION; -- may need to rollback bc multiple inserts
+
+  INSERT INTO reader_coverage (coverage_id, covering_reader_id, spot_covered_id)
+  VALUES (DEFAULT, reader_id_in, spot_covered_id_in);
+
+  SET coverage_id = LAST_INSERT_ID();
+  SELECT coverage_id as 'coverage_id';
+
+  COMMIT;
+END $$
+-- end of add_reader_coverage
+-- resets the DELIMETER
+DELIMITER ;
+
 -- ###### End of Procedures ######
 
 -- ###### Start of Functions ######
