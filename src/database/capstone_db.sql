@@ -256,9 +256,12 @@ CREATE PROCEDURE add_car(
   UPDATE tag SET car_pos = 'front' WHERE tag_id = tag_id_front;
   UPDATE tag SET car_pos = 'middle' WHERE tag_id = tag_id_middle;
   UPDATE tag SET car_pos = 'rear' WHERE tag_id = tag_id_rear;
+
   INSERT INTO registered_cars (car_id, registering_user, front_tag, middle_tag, rear_tag)
   VALUES (DEFAULT, user_id_in, tag_id_front, tag_id_middle, tag_id_rear);
 
+  SET created_car_id = LAST_INSERT_ID(); -- get id of last inserted row into a table
+  SELECT created_car_id as 'created_car_id';
   COMMIT;
 END $$
 -- end of add_tag
