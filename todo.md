@@ -14,7 +14,7 @@
   - [x] add_reader
     - [ ] also add_adjacent_reader???? as function that gets called
       - for now keep it stand alone though
-  - [] add_observation_event
+  - [x] add_observation_event
   - [x] add_detection_event
   - [ ] add_reader_coverage - **function**
     - would get called by add_reader or add_spot??

@@ -297,6 +297,37 @@ END $$
 -- resets the DELIMETER
 DELIMITER ;
 
+DROP PROCEDURE IF EXISTS add_observation_event;
+DELIMITER $$
+-- adds a reader observation event to a table in database
+-- given: observed time, signal strength
+-- returns: created id
+CREATE PROCEDURE add_observation_event(
+  IN observation_time_in DATETIME,
+  IN signal_strength_in FLOAT
+
+) BEGIN  -- use transaction bc multiple inserts and should rollback on error
+  DECLARE created_observ_id INT;
+  DECLARE EXIT HANDLER FOR SQLEXCEPTION
+  BEGIN
+    SHOW ERRORS;
+    ROLLBACK;
+  END;
+  START TRANSACTION; -- may need to rollback bc multiple inserts
+
+  INSERT INTO observation_event(observation_id, time_observed, signal_strength, is_relevant)
+  VALUES (DEFAULT, observation_time_in, signal_strength_in, true);
+
+  SET created_observ_id = LAST_INSERT_ID();
+  SELECT created_observ_id as 'created_observ_id';
+
+  COMMIT;
+END $$
+-- end of add_observation_event
+-- resets the DELIMETER
+DELIMITER ;
+
+
 DROP PROCEDURE IF EXISTS add_detection_event;
 DELIMITER $$
 -- adds a detected car event to the association table in database
