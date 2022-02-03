@@ -159,9 +159,9 @@ CREATE TABLE detects
 
 -- ###### Start of Procedures ######
 
-DROP PROCEDURE IF EXISTS insert_user;
+DROP PROCEDURE IF EXISTS add_user;
 DELIMITER $$
-CREATE PROCEDURE insert_user(
+CREATE PROCEDURE add_user(
   IN fname VARCHAR(50),
   IN lname VARCHAR(50),
   IN username VARCHAR(50),
@@ -180,7 +180,7 @@ CREATE PROCEDURE insert_user(
 
   COMMIT;
 
-END $$ -- end of insert_user
+END $$ -- end of add_user
 -- resets the DELIMETER
 DELIMITER ;
 
