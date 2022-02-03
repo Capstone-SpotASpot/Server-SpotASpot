@@ -30,16 +30,14 @@ class MainTester(CLIParser):
         }
 
         # Init CLI first, then DBManager
-        super().__init__(self.valid_tests)
-        print("Done Initializing CLI Parser")
+        CLIParser.__init__(self, self.valid_tests)
+
         self.db_manager = DB_Manager(self.args['db_user'], self.args['pwd'],
                                 self.args['db'], self.args['db_host'])
 
         if self.args['test'] == "ALL":
             print("Running all tests")
         else:
-            print("Running test: " + self.args['test'] + ".py")
-
             # All cb's take db_manager obj as a param
             test_func_cb = self.valid_tests[self.args['test']]
             test_func_cb(self.db_manager)

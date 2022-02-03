@@ -8,7 +8,7 @@ from pymysql.cursors import Cursor
 from db_manager import DB_Manager
 
 def test_add_user(db_manager: DB_Manager) -> bool:
-    print("Running test for add_user procedure")
+    print("\nRunning test for add_user procedure")
     did_pass = True
     first_name = "test_fname"
     last_name = "test_lname"
@@ -21,7 +21,6 @@ def test_add_user(db_manager: DB_Manager) -> bool:
     filter_str.append(f"AND user_password = '{pwd}'")
 
     did_pass &= db_manager.add_user(first_name, last_name, username, pwd)
-    print(f"did_pass after add user = {did_pass}")
     # Check to see that there is a row in the table which matches the inputs
     try:
         filter_clause = " ".join(filter_str)
@@ -32,15 +31,14 @@ def test_add_user(db_manager: DB_Manager) -> bool:
     # Cleanup test by deleting the newly made row
     try:
         filter_clause = " ".join(filter_str[:-1])
-        print(f"fitler for delete {filter_clause}")
         db_manager.cursor.execute(f"DELETE FROM users WHERE {filter_clause};")
         db_manager.conn.commit()
         res = db_manager.cursor.fetchall()
     except:
         did_pass = False
 
-    print(f"test pass? {did_pass}")
-    # assert(did_pass)
+    assert(did_pass)
+    print("test_add_user.........passed!")
 
 
 
