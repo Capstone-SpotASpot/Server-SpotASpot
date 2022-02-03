@@ -21,6 +21,7 @@ class DB_Manager(ReaderDBManager, MobileAppDBManager):
             \n@param: pwd   - The password to connect to database with
             \n@param: db    - The name of the database to connect with
             \n@param: host  - The IP/localhost of the database to connect with
+            \nNote: This class defines all functions not specific to the Reader or Mobile App
         """
         try:
             self.conn = pymysql.connect(
@@ -45,6 +46,16 @@ class DB_Manager(ReaderDBManager, MobileAppDBManager):
     def updatePwd(self):
         "WIP"
         pass
+
+    def add_reader(self, latitude, longitude) -> bool:
+        """Add a reader to the database.
+        \n:return True if added successfully. False otherwise."""
+        try:
+            self.cursor.execute("call add_reader(%s, %s)",
+                                (latitude, longitude))
+            return True
+        except:
+            return False
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Database Python Connector")

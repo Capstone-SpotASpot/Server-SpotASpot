@@ -6,7 +6,6 @@ from typing import Dict
 class CLIParser():
     def __init__(self, valid_test: Dict):
         """Class to make adding CLI flags easy for ALL test classes Via inherinting them"""
-        print("Initializing CLI Parser")
         self.parser = argparse.ArgumentParser(
             description="Start up a connection the SpotASpot_dev DB")
 

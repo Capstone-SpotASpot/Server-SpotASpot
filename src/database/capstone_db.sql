@@ -11,8 +11,8 @@ DROP TABLE IF EXISTS readers;
 CREATE TABLE readers
 (
     reader_id INT PRIMARY KEY NOT NULL AUTO_INCREMENT,
-    longitude FLOAT( 10, 6 ) NOT NULL,
-    latitude FLOAT( 10, 6 ) NOT NULL
+    latitude FLOAT( 10, 6 ) NOT NULL,
+    longitude FLOAT( 10, 6 ) NOT NULL
 );
 
 -- Create recursive reader relationship
@@ -184,7 +184,19 @@ END $$ -- end of add_user
 -- resets the DELIMETER
 DELIMITER ;
 
+DROP PROCEDURE IF EXISTS add_reader;
+DELIMITER $$
+CREATE PROCEDURE add_reader(
+  IN p_latitude FLOAT( 10, 6 ),
+  IN p_longitude FLOAT( 10, 6 )
+) BEGIN
 
+    INSERT INTO readers (reader_id, latitude, longitude )
+        VALUES (DEFAULT, p_latitude, p_longitude );
+
+END $$ -- end of add_reader
+-- resets the DELIMETER
+DELIMITER ;
 
 -- ###### End of Procedures ######
 
