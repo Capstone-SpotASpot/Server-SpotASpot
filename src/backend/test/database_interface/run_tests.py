@@ -62,7 +62,6 @@ if __name__ == '__main__':
         print("-------------------------------------\n\n")
         del valid_tests["ALL"]
         for classname_str in list(valid_tests.values()):
-            # tests_to_run.append(str_to_classname(classname_str))
             tests_to_run.append(classname_str)
     else:
         # All cb's take db_manager obj as a param
