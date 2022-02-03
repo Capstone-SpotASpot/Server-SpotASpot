@@ -18,7 +18,7 @@
     - would get called by add_reader or add_spot??
     - or by application?
 * **Test calls/selects for procedures&functions** - could be aman?
-  - [ ] test adding user
+  - [x] test adding user
   - [ ] test adding tag
   - [ ] test adding car
   - [ ] test adding spot
