@@ -180,7 +180,8 @@ CREATE PROCEDURE add_user(
 
   COMMIT;
 
-END $$ -- end of add_user
+END $$
+-- end of add_user
 -- resets the DELIMETER
 DELIMITER ;
 
@@ -194,7 +195,8 @@ CREATE PROCEDURE add_reader(
     INSERT INTO readers (reader_id, latitude, longitude )
         VALUES (DEFAULT, p_latitude, p_longitude );
 
-END $$ -- end of add_reader
+END $$
+-- end of add_reader
 -- resets the DELIMETER
 DELIMITER ;
 
