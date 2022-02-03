@@ -297,6 +297,37 @@ END $$
 -- resets the DELIMETER
 DELIMITER ;
 
+DROP PROCEDURE IF EXISTS add_detection_event;
+DELIMITER $$
+-- adds a detected car event to the association table in database
+-- given: reader_id responsible for event, seen tag_id, observation_id
+-- returns: created id
+CREATE PROCEDURE add_detection_event(
+  IN reader_id_in INT,
+  IN seen_tag_id_in INT,
+  IN observation_id_in INT
+
+) BEGIN  -- use transaction bc multiple inserts and should rollback on error
+  DECLARE created_detect_id INT;
+  DECLARE EXIT HANDLER FOR SQLEXCEPTION
+  BEGIN
+    SHOW ERRORS;
+    ROLLBACK;
+  END;
+  START TRANSACTION; -- may need to rollback bc multiple inserts
+
+  INSERT INTO detects (detection_id, detecting_reader_id, detected_tag_id, observation_event_id)
+  VALUES (DEFAULT, reader_id_in, seen_tag_id_in, observation_id_in);
+
+  SET created_detect_id = LAST_INSERT_ID();
+  SELECT created_detect_id as 'created_detect_id';
+
+  COMMIT;
+END $$
+-- end of add_detection_event
+-- resets the DELIMETER
+DELIMITER ;
+
 -- ###### End of Procedures ######
 
 -- ###### Start of Functions ######
