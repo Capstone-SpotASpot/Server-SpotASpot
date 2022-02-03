@@ -7,7 +7,8 @@
 ## Implementation TODO's
 * **procedures / funnctions**
   - [x] add_user
-  - [ ] add_tag
+  - [x] add_tag
+    - [ ] update_tag_pos
   - [ ] add_car
   - [ ] add_spot
   - [x] add_reader

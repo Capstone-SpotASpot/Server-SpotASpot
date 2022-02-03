@@ -200,6 +200,32 @@ END $$
 -- resets the DELIMETER
 DELIMITER ;
 
+DROP PROCEDURE IF EXISTS add_tag;
+DELIMITER $$
+-- creates a new tag and adds to the database
+-- returns the new tag's ID for user client side
+CREATE PROCEDURE add_tag() BEGIN
+  -- use transaction bc multiple inserts and should rollback on error
+  DECLARE new_tag_id INT;
+  DECLARE EXIT HANDLER FOR SQLEXCEPTION
+  BEGIN
+    SHOW ERRORS;
+    ROLLBACK;
+  END;
+  START TRANSACTION; -- may need to rollback bc multiple inserts
+
+  -- leave car position blank as it will be filled in later
+  INSERT INTO tag (tag_id) VALUES (DEFAULT);
+  SET new_tag_id = LAST_INSERT_ID(); -- get id of last inserted row into a table
+  SELECT new_tag_id as 'new_tag_id';
+
+  COMMIT;
+END $$
+-- end of add_tag
+-- resets the DELIMETER
+DELIMITER ;
+
+
 -- ###### End of Procedures ######
 
 -- ###### Start of Functions ######
