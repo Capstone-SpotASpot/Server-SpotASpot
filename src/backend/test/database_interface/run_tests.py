@@ -56,8 +56,8 @@ if __name__ == '__main__':
 
     # Find the desired test list
     tests_to_run = []
-    test_selected = parser.args['test']
-    if parser.args['test'] == "ALL":
+    test_list = parser.args['test']
+    if 'ALL' in test_list:
         print("Running all tests")
         print("-------------------------------------\n\n")
         del valid_tests["ALL"]
@@ -66,7 +66,8 @@ if __name__ == '__main__':
             tests_to_run.append(classname_str)
     else:
         # All cb's take db_manager obj as a param
-        tests_to_run.append(valid_tests[test_selected])
+        for test_selected in test_list:
+            tests_to_run.append(valid_tests[test_selected])
 
     # setup testing
     suite = unittest.TestSuite()
