@@ -10,7 +10,7 @@
   - [ ] add_tag
   - [ ] add_car
   - [ ] add_spot
-  - [ ] add_reader
+  - [x] add_reader
     - [ ] also add_adjacent_reader???? as function that gets called
       - for now keep it stand alone though
   - [ ] add_detection_event
@@ -22,7 +22,7 @@
   - [ ] test adding tag
   - [ ] test adding car
   - [ ] test adding spot
-  - [ ] test adding reader
+  - [x] test adding reader
   - [ ] test adding adjacent readers
   - [ ] test adding detection event
   - [ ] test adding reader covering spot
