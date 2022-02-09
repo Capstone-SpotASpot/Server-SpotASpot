@@ -9,6 +9,7 @@ import pathlib
 from pathlib import Path
 import secrets
 import getpass
+from datetime import  datetime
 
 #-----------------------------3RD PARTY DEPENDENCIES-----------------------------#
 import flask
@@ -73,10 +74,31 @@ class WebApp(UserManager):
         self.createUserPages()
         self.createInfoRoutes()
         self.createMobileGetRoutes()
+        self.createReaderPostRoutes()
 
     def createInfoRoutes(self):
         """All routes for internal passing of information"""
         pass
+
+    def createReaderPostRoutes(self):
+        """All routes for receiving information from the reader's"""
+        @self._app.route("/reader/send_event_data",
+                        methods=["POST"],
+                        defaults={'reader_id': -1, 'tag_id': -1, 'signal_strength': -1})
+        def reader_send_event_data():
+            """Params: reader_id, tag_id, and signal_stregth
+            \n:brief Stores the event in the correct database table and ensures the data is processed"""
+            # Receive + Store data from reader
+            args = request.args
+            reader_id = args.get('reader_id')
+            tag_id = args.get('tag_id')
+            signal_strength = args.get('signal_strength')
+            timestamp = datetime.now()
+            readeable_timestamp = timestamp.strftime('%Y-%m-%d %H:%M:%S')
+
+            detection_id = self.add_reader_event(
+                readeable_timestamp, signal_strength, reader_id, tag_id)
+            return detection_id
 
     def createMobileGetRoutes(self):
         """All routes for Get requests from the Mobile App"""

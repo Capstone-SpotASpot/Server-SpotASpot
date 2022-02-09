@@ -399,17 +399,19 @@ END $$
 -- resets the DELIMETER
 DELIMITER ;
 
-DROP PROCEDURE IF EXISTS add_observation_event;
+DROP PROCEDURE IF EXISTS add_reader_event;
 DELIMITER $$
--- adds a reader observation event to a table in database
--- given: observed time, signal strength
+-- adds a reader observation event to observation and detection association table in database
+-- given: observed time, signal strength, reader id, tag id
 -- returns: created id
-CREATE PROCEDURE add_observation_event(
+CREATE PROCEDURE add_reader_event(
   IN observation_time_in DATETIME,
-  IN signal_strength_in FLOAT
-
+  IN signal_strength_in FLOAT,
+  IN reader_id_in INT,
+  IN seen_tag_id_in INT
 ) BEGIN  -- use transaction bc multiple inserts and should rollback on error
   DECLARE created_observ_id INT;
+  DECLARE created_detect_id INT;
   DECLARE EXIT HANDLER FOR SQLEXCEPTION
   BEGIN
     SHOW ERRORS;
@@ -423,6 +425,12 @@ CREATE PROCEDURE add_observation_event(
   SET created_observ_id = LAST_INSERT_ID();
   SELECT created_observ_id as 'created_observ_id';
 
+  INSERT INTO detects (detection_id, detecting_reader_id, detected_tag_id, observation_event_id)
+  VALUES (DEFAULT, reader_id_in, seen_tag_id_in, created_observ_id);
+
+  SET created_detect_id = LAST_INSERT_ID();
+  SELECT created_observ_id as 'created_observ_id',
+        created_detect_id as 'created_detect_id';
   COMMIT;
 END $$
 -- end of add_observation_event
