@@ -80,10 +80,10 @@ class WebApp(UserManager):
 
     def createMobileGetRoutes(self):
         """All routes for Get requests from the Mobile App"""
-        @self._app.route("/mobile/get_is_reader_taken/<int:reader_id>")
-        def get_is_reader_taken(reader_id: int) -> bool:
+        @self._app.route("/mobile/get_is_spot_taken/<int:reader_id>")
+        def get_is_spot_taken(reader_id: int) -> bool:
             """Given a reader_id, returns it status"""
-            return flask.jsonify(self.is_reader_taken(reader_id))
+            return flask.jsonify(self.is_spot_taken(reader_id))
 
         @self._app.route("/mobile/get_local_readers",
                         methods=["GET"],

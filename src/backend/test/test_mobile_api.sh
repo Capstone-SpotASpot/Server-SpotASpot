@@ -77,10 +77,10 @@ curl $url'/mobile/get_local_readers?x_coord=0&y_coord=0'
 echo -n "TEST 2 - Given Reader ID, RETURN its status."
 echo "Only available readers are reader 0 = free, reader 1 = taken."
 echo "Testing reader 0...expect a return of False because it is free"
-curl $url'/mobile/get_is_reader_taken/0'
+curl $url'/mobile/get_is_spot_taken/0'
 
 echo "Testing reader 1...expect a return of True because it is taken"
-curl $url'/mobile/get_is_reader_taken/1'
+curl $url'/mobile/get_is_spot_taken/1'
 
 echo "Testing reader 500(doesn't exist)...expect a return of None/Null because reader does not exist"
-curl $url'/mobile/get_is_reader_taken/500'
+curl $url'/mobile/get_is_spot_taken/500'
