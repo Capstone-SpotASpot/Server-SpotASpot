@@ -33,7 +33,7 @@ class MobileAppDBManager():
         except:
             return False
 
-    def is_reader_taken(self, reader_id: int) -> Optional[bool]:
+    def is_spot_taken(self, reader_id: int) -> Optional[bool]:
         """Given the reader's unique id, return if its spot is taken or not.
         \nNote: for testing, reader 0 = free, reader 1 = taken.
         \n@return:
