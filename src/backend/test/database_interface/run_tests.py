@@ -21,8 +21,8 @@ sys.path.insert(0, os.path.abspath("../../"))
 #-----------------------------3RD PARTY DEPENDENCIES-----------------------------#
 
 #--------------------------------Project Includes--------------------------------#
-from test_add_reader import TestAddReader
-from test_add_user import TestAddUser
+from test_reader import TestReader
+from test_user import TestUser
 
 from cli_parser import CLIParser
 from db_manager import DB_Manager
@@ -40,8 +40,8 @@ class ConnectionMaker(unittest.TestCase):
 if __name__ == '__main__':
     valid_tests = {
         "ALL": "ALL",
-        "add_reader": TestAddReader,
-        "add_user": TestAddUser
+        "add_reader": TestReader,
+        "add_user": TestUser
     }
     parser = CLIParser(valid_tests)
     made_conn = ConnectionMaker(parser.args)
@@ -51,8 +51,8 @@ if __name__ == '__main__':
     # Get around unittest's inability to pass args to setUp()
     # By setting the class variables for EACH test case class to have the connection
     # ONLY way to pass DB connections to test cases due to unittest's design
-    TestAddUser.setUpConn(made_conn.db_manager)
-    TestAddReader.setUpConn(made_conn.db_manager)
+    TestUser.setUpConn(made_conn.db_manager)
+    TestReader.setUpConn(made_conn.db_manager)
 
     # Find the desired test list
     tests_to_run = []

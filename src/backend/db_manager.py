@@ -47,12 +47,13 @@ class DB_Manager(ReaderDBManager, MobileAppDBManager):
         "WIP"
         pass
 
-    def add_reader(self, latitude, longitude) -> bool:
+    def add_reader(self, latitude: float, longitude: float, reader_range: float) -> bool:
         """Add a reader to the database.
+        \n reader_range is the radius of the readers range in meters(m)
         \n:return True if added successfully. False otherwise."""
         try:
-            self.cursor.execute("call add_reader(%s, %s)",
-                                (latitude, longitude))
+            self.cursor.execute("call add_reader(%s, %s, %s)",
+                                (latitude, longitude, reader_range))
             return True
         except:
             return False

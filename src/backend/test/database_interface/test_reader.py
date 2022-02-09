@@ -8,7 +8,7 @@ from datetime import datetime
 from db_manager import DB_Manager
 
 
-class TestAddReader(unittest.TestCase):
+class TestReader(unittest.TestCase):
     @classmethod
     def setUpConn(cls, db_manager: DB_Manager):
         cls._db_manager = db_manager
@@ -19,14 +19,15 @@ class TestAddReader(unittest.TestCase):
         # Fail case  - more than 6 digits after decimal place
         latitude = "42.337108"
         longitude = "-71.086593"
+        reader_range = 20.0
         filter_clause = f"latitude = '{latitude}' AND longitude = '{longitude}'"
         sql_count_expr = f"SELECT COUNT(*) FROM readers WHERE {filter_clause};"
         cls._db_manager.cursor.execute(sql_count_expr)
         before_add_raw = cls._db_manager.cursor.fetchall()
         count_before_addition = (list(before_add_raw[0].values()))[0]
 
-        res = cls._db_manager.add_reader(latitude, longitude)
-        # self.assertTrue(res, "Calling add_reader Failed")
+        res = cls._db_manager.add_reader(latitude, longitude, reader_range)
+        self.assertTrue(res, "Calling add_reader Failed")
 
 
         # Check that the row is in the table correctly

@@ -7,7 +7,7 @@ from pymysql.connections import Connection
 from db_manager import DB_Manager
 
 
-class TestAddUser(unittest.TestCase):
+class TestUser(unittest.TestCase):
     @classmethod
     def setUpConn(cls, db_manager: DB_Manager):
         cls._db_manager = db_manager
