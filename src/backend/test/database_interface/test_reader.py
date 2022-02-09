@@ -26,8 +26,8 @@ class TestReader(unittest.TestCase):
         before_add_raw = cls._db_manager.cursor.fetchall()
         count_before_addition = (list(before_add_raw[0].values()))[0]
 
-        res = cls._db_manager.add_reader(latitude, longitude, reader_range)
-        self.assertTrue(res, "Calling add_reader Failed")
+        created_reader_id = cls._db_manager.add_reader(latitude, longitude, reader_range)
+        self.assertTrue(created_reader_id != -1, "Calling add_reader Failed")
 
 
         # Check that the row is in the table correctly
@@ -38,7 +38,8 @@ class TestReader(unittest.TestCase):
         #                 "The reader row was not succesfully added")
 
         # Delete the entry from the table - the last one
-        cls._db_manager.cursor.execute("DELETE FROM readers ORDER BY reader_id desc limit 1")
+        # safe to use f-strings bc no user input
+        cls._db_manager.cursor.execute(f"DELETE FROM readers WHERE reader_id = {created_reader_id}")
         cls._db_manager.conn.commit()
 
         return True
@@ -84,3 +85,34 @@ class TestReader(unittest.TestCase):
             cls._db_manager.cursor.execute("DELETE FROM observation_event WHERE observation_id = '%s'", observation_id)
             cls._db_manager.conn.commit()
 
+    def test_add_tag(self) -> bool:
+        """Test add_tag() to make sure a new tag id is returned and that it is unique"""
+        cls = self.__class__
+
+        def get_curr_tag_ids():
+            # get all currently existing tag ids
+            cls._db_manager.cursor.execute("select tag_id from tag;")
+            query_raw_results = cls._db_manager.cursor.fetchall()
+            # flatten list of dicts into list of tag ids
+            return [res_dict["tag_id"] for res_dict in query_raw_results]
+
+        # get tag ids prior to testing
+        past_tag_ids = get_curr_tag_ids()
+
+        # call add_tag() -- returns -1 on error, tag_id otherwise
+        created_tag_id = cls._db_manager.add_tag()
+        self.assertTrue(created_tag_id != -1, "Calling add_tag Failed")
+
+        # make sure the new tag id is unique from past
+        self.assertTrue(created_tag_id not in past_tag_ids, "add_tag created bad new tag id")
+
+        # Check that the row is in the table correctly
+        after_test_tag_ids = get_curr_tag_ids()
+        self.assertTrue(len(after_test_tag_ids) == len(past_tag_ids)+1, "add_tag failed to insert new tag entry")
+        self.assertTrue(created_tag_id in after_test_tag_ids, "add_tag failed to insert new tag id in new entry")
+        cls._db_manager.cursor.execute("select tag_id from tag;")
+
+        # remove trace of test from db by removing added tag (the last one)
+        # safe to use f-strings bc no user input
+        cls._db_manager.cursor.execute(f"delete from tag where tag_id = {created_tag_id};")
+        cls._db_manager.conn.commit()
