@@ -4,6 +4,7 @@
 import os
 import sys
 from typing import Optional, Dict, List
+from datetime import datetime
 
 #-----------------------------3RD PARTY DEPENDENCIES-----------------------------#
 import pymysql
@@ -17,6 +18,28 @@ class ReaderDBManager():
         """
         self.conn = conn
         self.cursor = cursor
+
+    def add_observation_event(self,
+                            observation_time: str,
+                            signal_strength: float) -> Optional[int]:
+        """Adds an observation event and return the generated id for that row in the table
+        \n    observation_time (datetime.strftime):
+            The timestamp of receiving that event from the reader in '%Y-%m-%d %H:%M:%S' form
+        \n    signal_strength (float):
+        \nReturns:
+        \n    int: The id of the event stored in the DB. None on failure
+        """
+        print(f"\nobservation_time = {observation_time}, signal_strength = {signal_strength}")
+        try:
+            self.cursor.execute("call add_observation_event(%s, %s)",
+                                (observation_time, signal_strength))
+            observ_id = self.cursor.fetchall()[0]
+            return observ_id
+        except:
+            return None
+
+
+
 
     def reader_cleanup(self):
         self.cursor.close()
