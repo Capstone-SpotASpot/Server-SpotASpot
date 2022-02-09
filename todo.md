@@ -7,16 +7,17 @@
 ## Implementation TODO's
 * **procedures / funnctions**
   - [x] add_user
-  - [ ] add_tag
-  - [ ] add_car
-  - [ ] add_spot
+  - [x] add_tag
+  - [x] add_car
+    - [x] update_tag_pos
+  - [x] add_spot
+    - [x] check if any existing reader is in range of this new spot
   - [x] add_reader
-    - [ ] also add_adjacent_reader???? as function that gets called
-      - for now keep it stand alone though
-  - [ ] add_detection_event
-  - [ ] add_reader_coverage - **function**
-    - would get called by add_reader or add_spot??
-    - or by application?
+    - [x] add to reader_coverage association table based on new reader
+    - [x] functions: are_coords_in_range() & calc_coord_dist()
+    - [x] also add_adjacent_reader???? as procedure that gets called
+  - [x] add_observation_event
+  - [x] add_detection_event
 * **Test calls/selects for procedures&functions** - could be aman?
   - [x] test adding user
   - [ ] test adding tag
