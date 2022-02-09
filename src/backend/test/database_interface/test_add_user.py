@@ -15,7 +15,6 @@ class TestAddUser(unittest.TestCase):
     def test_add_user(self) -> bool:
         cls = self.__class__
 
-        # print("\nRunning test for add_user procedure")
         did_pass = True
         first_name = "test_fname"
         last_name = "test_lname"
