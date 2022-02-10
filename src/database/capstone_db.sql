@@ -491,7 +491,7 @@ CREATE PROCEDURE is_spot_taken(
             parking_spot.longitude as longitude,
             parking_spot.latitude as latitude,
         -- spot is free = 0, taken = 1
-        CASE spot_status
+        CASE parked_car_id
             WHEN NULL THEN 0
             WHEN NOT NULL THEN 1
             ELSE -1

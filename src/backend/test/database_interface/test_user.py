@@ -148,4 +148,5 @@ class TestUser(unittest.TestCase):
         spot_id = 1
         spot_status_dict = cls._db_manager.is_spot_taken(1)
         print(spot_status_dict)
-        self.assertEqual(spot_status_dict != None, f"spot_status_dict = {spot_status_dict}")
+        # TODO: actually test this when you can
+        self.assertTrue(spot_status_dict != None, f"spot_status_dict = {spot_status_dict}")
