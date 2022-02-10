@@ -429,8 +429,6 @@ CREATE PROCEDURE add_reader_event(
   VALUES (DEFAULT, observation_time_in, signal_strength_in, true);
 
   SET created_observ_id = LAST_INSERT_ID();
-  SELECT created_observ_id as 'created_observ_id';
-
   INSERT INTO detects (detection_id, detecting_reader_id, detected_tag_id, observation_event_id)
   VALUES (DEFAULT, reader_id_in, seen_tag_id_in, created_observ_id);
 

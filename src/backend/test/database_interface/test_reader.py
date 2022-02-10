@@ -1,3 +1,4 @@
+from pickle import TRUE
 import unittest
 from pymysql.cursors import Cursor
 from pymysql import connections, cursors
@@ -16,53 +17,61 @@ class TestReader(unittest.TestCase):
     def test_add_reader(self) -> bool:
         cls = self.__class__
 
-        # Fail case  - more than 6 digits after decimal place
-        latitude = "42.337108"
-        longitude = "-71.086593"
-        reader_range = 20.0
-        filter_clause = f"latitude = '{latitude}' AND longitude = '{longitude}'"
-        sql_count_expr = f"SELECT COUNT(*) FROM readers WHERE {filter_clause};"
-        cls._db_manager.cursor.execute(sql_count_expr)
-        before_add_raw = cls._db_manager.cursor.fetchall()
-        count_before_addition = (list(before_add_raw[0].values()))[0]
+        created_reader_id = self.help_add_reader()
 
-        created_reader_id = cls._db_manager.add_reader(latitude, longitude, reader_range)
-        self.assertTrue(created_reader_id != -1, "Calling add_reader Failed")
+        # Delete the entry from the table
+        self.help_remove_reader(created_reader_id)
 
-
-        # Check that the row is in the table correctly
-        cls._db_manager.cursor.execute(sql_count_expr)
-        raw_count_after_addition = cls._db_manager.cursor.fetchall()
-        count_after_addition = (list(raw_count_after_addition[0].values()))[0]
-        # self.assertTrue(count_after_addition == count_before_addition + 1,
-        #                 "The reader row was not succesfully added")
-
-        # Delete the entry from the table - the last one
-        # safe to use f-strings bc no user input
-        cls._db_manager.cursor.execute(f"DELETE FROM readers WHERE reader_id = {created_reader_id}")
-        cls._db_manager.conn.commit()
 
         return True
 
-    def test_add_observation_event(self) -> bool:
-        """Tests the handling of adding an observation event."""
+    def test_add_reader_event(self) -> bool:
         cls = self.__class__
 
-        # Create an observation event
+        # Setup the inputs
         timestamp = datetime.now()
         readeable_timestamp_in = timestamp.strftime('%Y-%m-%d %H:%M:%S')
         singal_strength_in = 1
-        observation_id_dict = cls._db_manager.add_observation_event(readeable_timestamp_in, singal_strength_in)
-        observation_id = list(observation_id_dict.values())[0]
+        reader_id = self.help_add_reader()
+        tag_id = cls._db_manager.add_tag() # -1 on fail,
 
-        # Make sure adding was reported as successfull and the tuple truly exists in the table
+        # Call the function being tested
+        id_dict = cls._db_manager.add_reader_event(
+            readeable_timestamp_in, singal_strength_in, reader_id, tag_id)[0]
+        observation_id = id_dict['created_observ_id']
+        detection_id = id_dict['created_detect_id']
+
+        # Verify the results
+        # Check that the row's values are exactly correct
+        cls._db_manager.cursor.execute(
+            "SELECT * FROM observation_event WHERE observation_id = '%s'", observation_id)
+        inserted_row = cls._db_manager.cursor.fetchone()
+
         add_observ_success = observation_id != None
+        add_detection_success = detection_id != None
+
+        # Delete the entry(s) from the table if they were added
+        # do BEFORE asserting. So on failure, rows deleted before program closes
+        if add_observ_success:
+            cls._db_manager.cursor.execute(
+                "DELETE FROM observation_event WHERE observation_id = '%s'", observation_id)
+            cls._db_manager.conn.commit()
+        if add_detection_success:
+            cls._db_manager.cursor.execute(
+                "DELETE FROM detects WHERE detection_id = '%s'", detection_id)
+            cls._db_manager.conn.commit()
+        if reader_id != -1:
+            self.help_remove_reader(reader_id)
+        if tag_id != -1:
+            self.help_remove_tag(tag_id)
+
+        # Perform all assertions after cleaup is done
+        # Make sure adding was reported as successfull and the tuple truly exists in the table
         self.assertTrue(add_observ_success,
                         f"observation_id = {observation_id}. Cant be None")
 
-        # Check that the row's values are exactly correct
-        cls._db_manager.cursor.execute("SELECT * FROM observation_event WHERE observation_id = %s", observation_id)
-        inserted_row = cls._db_manager.cursor.fetchone()
+        self.assertTrue(add_detection_success,
+                        f"detection_id = {detection_id}. Cant be None")
 
         self.assertTrue(str(inserted_row['time_observed']) == readeable_timestamp_in,
                         "Found timestamp = {}, expected = {}".format(
@@ -86,7 +95,6 @@ class TestReader(unittest.TestCase):
             cls._db_manager.conn.commit()
 
     def test_add_tag(self) -> bool:
-        """Test add_tag() to make sure a new tag id is returned and that it is unique"""
         cls = self.__class__
 
         def get_curr_tag_ids():
@@ -114,5 +122,51 @@ class TestReader(unittest.TestCase):
 
         # remove trace of test from db by removing added tag (the last one)
         # safe to use f-strings bc no user input
-        cls._db_manager.cursor.execute(f"delete from tag where tag_id = {created_tag_id};")
+        self.help_remove_tag(created_tag_id)
+
+
+        return True
+
+    ###### Helpers / Setup functions
+    def help_add_reader(self) -> int:
+        """Helper function to add a reader - and test that it was added correctly.
+        Also performs testing. Useful for testing add_reader
+        AND other tests that need to add a reader.
+        \n:return The reader_id created. -1 on fail"""
+        cls = self.__class__
+
+        latitude = "42.337108"
+        longitude = "-71.086593"
+        reader_range = 20.0
+        filter_clause = f"latitude = '{latitude}' AND longitude = '{longitude}'"
+        sql_count_expr = f"SELECT COUNT(*) FROM readers WHERE {filter_clause};"
+        cls._db_manager.cursor.execute(sql_count_expr)
+        before_add_raw = cls._db_manager.cursor.fetchall()
+        count_before_addition = (list(before_add_raw[0].values()))[0]
+
+        created_reader_id = cls._db_manager.add_reader(latitude, longitude, reader_range)
+        self.assertTrue(created_reader_id != -1, "Calling add_reader Failed")
+
+
+        # Check that the row is in the table correctly
+        cls._db_manager.cursor.execute(sql_count_expr)
+        raw_count_after_addition = cls._db_manager.cursor.fetchall()
+        count_after_addition = (list(raw_count_after_addition[0].values()))[0]
+        self.assertTrue(count_after_addition == count_before_addition + 1,
+                        "The reader row was not succesfully added")
+
+        return created_reader_id
+
+
+    def help_remove_reader(self, reader_id):
+        cls = self.__class__
+        cls._db_manager.cursor.execute(f"DELETE FROM readers WHERE reader_id = {reader_id}")
+        cls._db_manager.conn.commit()
+
+    def help_remove_tag(self, tag_id) -> int:
+        """Util function to add a tag. Remove the row from the tag with the id given.
+        Also performs asserting during procedure calls"""
+        cls = self.__class__
+
+        cls._db_manager.cursor.execute(f"delete from tag where tag_id = {tag_id};")
         cls._db_manager.conn.commit()

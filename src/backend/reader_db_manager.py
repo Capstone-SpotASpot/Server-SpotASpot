@@ -32,10 +32,9 @@ class ReaderDBManager():
         \nReturns:
         \n    Dict: {'created_observ_id': <val>, 'created_detect_id': <val>}
         """
-        print(f"\nobservation_time = {observation_time}, signal_strength = {signal_strength}")
         ids_dict = {'created_observ_id': None , 'created_detect_id': None }
         try:
-            self.cursor.execute("call add_reader_event(%s, %s)",
+            self.cursor.execute("call add_reader_event(%s, %s, %s, %s)",
                                 (observation_time, signal_strength,
                                 reader_id, tag_id ))
             ids_dict = self.cursor.fetchall()

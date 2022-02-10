@@ -50,7 +50,6 @@ class TestUser(unittest.TestCase):
         return True
 
     def test_add_car(self) -> bool:
-        """Test add_car() to make sure a new car id is returned and that it is unique"""
         cls = self.__class__
 
         # get cars table prior to testing
