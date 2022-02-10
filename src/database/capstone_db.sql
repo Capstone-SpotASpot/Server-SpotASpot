@@ -81,7 +81,7 @@ CREATE TABLE registered_cars
     CONSTRAINT registering_user_fk
         FOREIGN KEY (registering_user)
         REFERENCES users(user_id)
-        ON UPDATE RESTRICT ON DELETE CASCADE
+        ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 
@@ -221,7 +221,7 @@ DELIMITER ;
 
 DROP PROCEDURE IF EXISTS add_user;
 DELIMITER $$
--- adds a user to the database and returns their id
+-- adds a user to the database and returns their id (-1 if error)
 CREATE PROCEDURE add_user(
   IN fname VARCHAR(50),
   IN lname VARCHAR(50),
@@ -235,6 +235,7 @@ CREATE PROCEDURE add_user(
   BEGIN
     SHOW ERRORS;
     ROLLBACK;
+    SELECT -1 as 'created_user_id';
   END;
 
   START TRANSACTION;
@@ -327,7 +328,7 @@ DROP PROCEDURE IF EXISTS add_car;
 DELIMITER $$
 -- adds a car element to the database
 -- & updates the tag table to include position on a car
--- returns the id of the new car
+-- returns the id of the new car (-1 for error)
 CREATE PROCEDURE add_car(
   IN user_id_in INT,
   IN tag_id_front INT,
@@ -340,6 +341,7 @@ CREATE PROCEDURE add_car(
   BEGIN
     SHOW ERRORS;
     ROLLBACK;
+    SELECT -1 as 'created_car_id';
   END;
   START TRANSACTION; -- may need to rollback bc multiple inserts
 
