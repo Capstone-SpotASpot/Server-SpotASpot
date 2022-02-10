@@ -437,7 +437,7 @@ CREATE PROCEDURE add_reader_event(
         created_detect_id as 'created_detect_id';
   COMMIT;
 END $$
--- end of add_observation_event
+-- end of add_reader_event
 -- resets the DELIMETER
 DELIMITER ;
 
