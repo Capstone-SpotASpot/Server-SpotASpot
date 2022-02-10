@@ -29,9 +29,10 @@ class MobileAppDBManager():
         try:
             self.cursor.execute("call add_user(%s, %s, %s, %s)",
                                 (first_name, last_name, username, pwd))
-            return True
-        except:
-            return False
+            raw_res = list(self.cursor.fetchall())
+            return raw_res[0]["created_user_id"]
+        except Exception as err:
+            return -1
 
     def is_spot_taken(self, reader_id: int) -> Optional[bool]:
         """Given the reader's unique id, return if its spot is taken or not.
@@ -61,5 +62,21 @@ class MobileAppDBManager():
                 valid_reader_dict.append(reader)
         return valid_reader_dict
 
-
+    def add_car(self,
+        user_id: int,
+        tag_id_front: int,
+        tag_id_middle: int,
+        tag_id_rear: int
+    ):
+        """Add a user's car to the database giventheir car's 3 tags & their id
+        Returns: The created car's id (-1 if error)
+        """
+        try:
+            self.cursor.execute("call add_car(%s, %s, %s, %s)",
+                (user_id, tag_id_front, tag_id_middle, tag_id_rear))
+            # ignore name of field and just get the value
+            raw_res = list(self.cursor.fetchall())
+            return int(raw_res[0]["created_car_id"])
+        except Exception as err:
+            return -1
 

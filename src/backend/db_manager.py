@@ -47,15 +47,32 @@ class DB_Manager(ReaderDBManager, MobileAppDBManager):
         "WIP"
         pass
 
-    def add_reader(self, latitude, longitude) -> bool:
+    def add_reader(self, latitude: float, longitude: float, reader_range: float) -> int:
         """Add a reader to the database.
-        \n:return True if added successfully. False otherwise."""
+        \n reader_range is the radius of the readers range in meters(m)
+        \n:return the added reader's id if added successfully. -1 if error."""
         try:
-            self.cursor.execute("call add_reader(%s, %s)",
-                                (latitude, longitude))
-            return True
-        except:
-            return False
+            self.cursor.execute("call add_reader(%s, %s, %s)",
+                                (latitude, longitude, reader_range))
+            # ignore name of field and just get the value
+            return list(self.cursor.fetchall()[0].values())[0]
+        except Exception as err:
+            print(f"add_reader error: {err}")
+            return -1
+
+    def add_tag(self) -> int:
+        """Creates a new database entry for a single tag and returns its unique id.
+
+        Returns:
+            int: The id of the newly created tag (-1 if error)
+        """
+        try:
+            self.cursor.execute("call add_tag()")
+            # ignore name of field and just get the value
+            return list(self.cursor.fetchall()[0].values())[0]
+        except Exception as err:
+            print(f"add_tag error: {err}")
+            return -1
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Database Python Connector")
