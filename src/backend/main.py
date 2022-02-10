@@ -104,7 +104,8 @@ class WebApp(UserManager):
         """All routes for Get requests from the Mobile App"""
         @self._app.route("/mobile/get_is_spot_taken/<int:reader_id>")
         def get_is_spot_taken(reader_id: int) -> bool:
-            """Given a reader_id, returns it status"""
+            """Given a reader_id, returns the status of the spots it can reach.
+            :return {<spot_id>: <status>, <spot_id>: <status>}"""
             return flask.jsonify(self.is_spot_taken(reader_id))
 
         @self._app.route("/mobile/get_local_readers",

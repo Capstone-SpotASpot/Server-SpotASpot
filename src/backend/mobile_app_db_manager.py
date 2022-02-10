@@ -34,20 +34,31 @@ class MobileAppDBManager():
         except Exception as err:
             return -1
 
-    def is_spot_taken(self, reader_id: int) -> Optional[bool]:
-        """Given the reader's unique id, return if its spot is taken or not.
-        \nNote: for testing, reader 0 = free, reader 1 = taken.
+    def is_spot_taken(self, reader_id: int) -> Optional[Dict]:
+        """Given the reader's unique id, return if its spots are taken or not.
+        <status> = True if taken, False if empty/not-taken
+        \nNote: for testing, status: 0 = free, 1 = taken, -1 = something else
         \n@return:
             \n\t None = reader_id does not exist
-            \n\t True = reader's spot is not free/taken
-            \n\t False = reader's spot is free
+            \n\t {<spot_id>: {'status': <status>, ...}}
         """
-        # TODO: actually implement this
-        if reader_id == 0:
-            return False
-        elif reader_id == 1:
-            return True
-        else:
+        try:
+            self.cursor.execute("call is_spot_taken(%s)", reader_id)
+            # form:  [{spot_id, longitude, latitude, status}]
+            raw_status_dict = self.cursor.fetchall()
+            print(raw_status_dict)
+
+            # Transform dict to match return expected
+            status_dict = {}
+            for row in raw_status_dict:
+                status_dict[row['spot_id']] = {
+                    'status': row['status'],
+                    'longitude': row['longitude'],
+                    'latitude': row['latitude'],
+                }
+
+            return status_dict
+        except:
             return None
 
     def get_readers_in_radius(self, x_coord: float, y_coord: float, radius: float) -> List[Dict]:

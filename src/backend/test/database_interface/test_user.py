@@ -141,3 +141,11 @@ class TestUser(unittest.TestCase):
         # remove trace of test from db by removing added rows
         # safe to use f-strings bc no user input
         cleanup_car()
+
+    def test_is_spot_taken(self):
+        cls = self.__class__
+
+        spot_id = 1
+        spot_status_dict = cls._db_manager.is_spot_taken(1)
+        print(spot_status_dict)
+        self.assertEqual(spot_status_dict != None, f"spot_status_dict = {spot_status_dict}")

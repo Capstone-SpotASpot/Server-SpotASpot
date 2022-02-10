@@ -473,6 +473,41 @@ END $$
 DELIMITER ;
 
 
+DROP PROCEDURE IF EXISTS is_spot_taken;
+DELIMITER $$
+-- given: reader_id
+-- returns: status of all spots the given reader can cover ()
+CREATE PROCEDURE is_spot_taken(
+  IN reader_id_in INT
+) BEGIN  -- use transaction bc multiple inserts and should rollback on error
+  DECLARE EXIT HANDLER FOR SQLEXCEPTION
+  BEGIN
+    SHOW ERRORS;
+    ROLLBACK;
+  END;
+  START TRANSACTION; -- may need to rollback bc multiple inserts
+    -- Get the spot's that the reader covers through coverage table
+    SELECT  parking_spot.spot_id as spot_id,
+            parking_spot.longitude as longitude,
+            parking_spot.latitude as latitude,
+        -- spot is free = 0, taken = 1
+        CASE spot_status
+            WHEN NULL THEN 0
+            WHEN NOT NULL THEN 1
+            ELSE -1
+        END as spot_status
+        FROM readers
+        JOIN reader_coverage
+            ON readers.reader_id = reader_coverage.covering_reader_id
+        LEFT JOIN parking_spot
+            ON reader_coverage.spot_covered_id = parking_spot.spot_id;
+
+  COMMIT;
+END $$
+-- end of is_spot_taken
+-- resets the DELIMETER
+DELIMITER ;
+
 -- ###### End of Procedures ######
 
 INSERT INTO readers (longitude, latitude, reader_range)
