@@ -31,17 +31,28 @@ class ReaderDBManager():
         \n    signal_strength (float):
         \nReturns: The observation id
         """
-        observe_id = None
         try:
             self.cursor.execute("call add_observation(%s, %s, %s, %s)",
                                 (observation_time, signal_strength,
                                 reader_id, tag_id ))
-            raw_id = list(self.cursor.fetchall())[0]
-            observe_id = int(raw_id)
+            raw_id = list(self.cursor.fetchall().values())[0]
+            return int(raw_id)
         except:
-            return observe_id
+            return None
 
-
+    def add_detection(self,
+                      reader_id,
+                      observation1_id,
+                      observation2_id,
+                      observation3_id) -> Optional[Dict]:
+        try:
+            self.cursor.execute("call add_detection(%s, %s, %s, %s)",
+                                (reader_id, observation1_id,
+                                 observation2_id, observation3_id))
+            raw_id = list(self.cursor.fetchall().values())[0]
+            return int(raw_id)
+        except:
+            return None
 
     def reader_cleanup(self):
         self.cursor.close()
