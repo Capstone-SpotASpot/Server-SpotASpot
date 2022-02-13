@@ -19,28 +19,29 @@ class ReaderDBManager():
         self.conn = conn
         self.cursor = cursor
 
-    def add_reader_event(self,
+    def add_observation_event(self,
                             observation_time: str,
                             signal_strength: float,
                             reader_id: int,
-                            tag_id: int) -> Optional[Dict]:
+                            tag_id: int) -> Optional[int]:
         """Adds an observation & detection event.
         Return the generated id for that row in the Observation Table and Detection Table
         \n    observation_time (datetime.strftime):
             The timestamp of receiving that event from the reader in '%Y-%m-%d %H:%M:%S' form
         \n    signal_strength (float):
-        \nReturns:
-        \n    Dict: {'created_observ_id': <val>, 'created_detect_id': <val>}
+        \nReturns: The observation id
         """
-        ids_dict = {'created_observ_id': None , 'created_detect_id': None }
+        observe_id = None
         try:
-            self.cursor.execute("call add_reader_event(%s, %s, %s, %s)",
+            self.cursor.execute("call add_observation(%s, %s, %s, %s)",
                                 (observation_time, signal_strength,
                                 reader_id, tag_id ))
-            ids_dict = self.cursor.fetchall()
-            return ids_dict
+            raw_id = list(self.cursor.fetchall())[0]
+            observe_id = int(raw_id)
         except:
-            return ids_dict
+            return observe_id
+
+
 
     def reader_cleanup(self):
         self.cursor.close()
