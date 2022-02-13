@@ -108,9 +108,15 @@ CREATE TABLE observation_event
     observation_id INT PRIMARY KEY AUTO_INCREMENT NOT NULL,
     time_observed DATETIME NOT NULL,
     signal_strength FLOAT NOT NULL,
+    tag_seen_id INT NOT NULL,
 
     -- Used to keep track of old events that no longer factor into algo's
-    is_relevant boolean NOT NULL
+    is_relevant boolean NOT NULL,
+
+    CONSTRAINT observation_tag_fk
+        FOREIGN KEY (tag_seen_id)
+        REFERENCES tag (tag_id)
+        ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 -- Association Tables
@@ -140,19 +146,25 @@ CREATE TABLE detects
 (
     detection_id INT PRIMARY KEY AUTO_INCREMENT NOT NULL,
     detecting_reader_id INT NOT NULL,
-    detected_tag_id INT NOT NULL,
-    observation_event_id INT NOT NULL,
+    -- it takes 3 tags to make the observation - a full car
+    observation_event1_id INT NOT NULL,
+    observation_event2_id INT NOT NULL,
+    observation_event3_id INT NOT NULL,
 
     CONSTRAINT detects_reader_fk
         FOREIGN KEY (detecting_reader_id)
         REFERENCES readers (reader_id)
         ON UPDATE CASCADE ON DELETE CASCADE,
-    CONSTRAINT detects_tag_fk
-        FOREIGN KEY (detected_tag_id)
-        REFERENCES tag (tag_id)
+    CONSTRAINT observation1_fk
+        FOREIGN KEY (observation_event1_id)
+        REFERENCES observation_event (observation_id)
         ON UPDATE CASCADE ON DELETE CASCADE,
-    CONSTRAINT detects_event_fk
-        FOREIGN KEY (observation_event_id)
+    CONSTRAINT observation2_fk
+        FOREIGN KEY (observation_event2_id)
+        REFERENCES observation_event (observation_id)
+        ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT observation3_fk
+        FOREIGN KEY (observation_event3_id)
         REFERENCES observation_event (observation_id)
         ON UPDATE CASCADE ON DELETE CASCADE
 );
@@ -405,18 +417,47 @@ END $$
 -- resets the DELIMETER
 DELIMITER ;
 
-DROP PROCEDURE IF EXISTS add_reader_event;
+DROP PROCEDURE IF EXISTS add_observation;
 DELIMITER $$
 -- adds a reader observation event to observation and detection association table in database
 -- given: observed time, signal strength, reader id, tag id
 -- returns: created id
-CREATE PROCEDURE add_reader_event(
+CREATE PROCEDURE add_observation(
   IN observation_time_in DATETIME,
   IN signal_strength_in FLOAT,
   IN reader_id_in INT,
   IN seen_tag_id_in INT
 ) BEGIN  -- use transaction bc multiple inserts and should rollback on error
   DECLARE created_observ_id INT;
+  DECLARE EXIT HANDLER FOR SQLEXCEPTION
+  BEGIN
+    SHOW ERRORS;
+    ROLLBACK;
+  END;
+  START TRANSACTION; -- may need to rollback bc multiple inserts
+
+  INSERT INTO observation_event(observation_id, time_observed, signal_strength, is_relevant, tag_seen_id)
+  VALUES (DEFAULT, observation_time_in, signal_strength_in, true, seen_tag_id_in);
+
+  SET created_observ_id = LAST_INSERT_ID();
+  SELECT created_observ_id as 'created_observ_id';
+  COMMIT;
+END $$
+-- end of add_observation
+-- resets the DELIMETER
+DELIMITER ;
+
+DROP PROCEDURE IF EXISTS add_detection;
+DELIMITER $$
+-- adds 3 reader observation event
+-- given: observed time, signal strength, reader id, tag id
+-- returns: created id
+CREATE PROCEDURE add_detection(
+  IN reader_id_in INT,
+  IN observation_event1_id_in INT,
+  IN observation_event2_id_in INT,
+  IN observation_event3_id_in INT
+) BEGIN  -- use transaction bc multiple inserts and should rollback on error
   DECLARE created_detect_id INT;
   DECLARE EXIT HANDLER FOR SQLEXCEPTION
   BEGIN
@@ -425,22 +466,19 @@ CREATE PROCEDURE add_reader_event(
   END;
   START TRANSACTION; -- may need to rollback bc multiple inserts
 
-  INSERT INTO observation_event(observation_id, time_observed, signal_strength, is_relevant)
-  VALUES (DEFAULT, observation_time_in, signal_strength_in, true);
-
-  SET created_observ_id = LAST_INSERT_ID();
-  INSERT INTO detects (detection_id, detecting_reader_id, detected_tag_id, observation_event_id)
-  VALUES (DEFAULT, reader_id_in, seen_tag_id_in, created_observ_id);
+  INSERT INTO detects (detection_id, detecting_reader_id,
+                      observation_event1_id, observation_event2_id,
+                      observation_event3_id)
+  VALUES (DEFAULT, reader_id_in, observation_event1_id_in,
+        observation_event2_id_in, observation_event3_id_in);
 
   SET created_detect_id = LAST_INSERT_ID();
-  SELECT created_observ_id as 'created_observ_id',
-        created_detect_id as 'created_detect_id';
+  SELECT created_detect_id as 'created_detect_id';
   COMMIT;
 END $$
--- end of add_reader_event
+-- end of add_detection
 -- resets the DELIMETER
 DELIMITER ;
-
 
 
 DROP PROCEDURE IF EXISTS add_adjacent_reader;
@@ -468,7 +506,6 @@ CREATE PROCEDURE add_adjacent_reader(
 
   COMMIT;
 END $$
--- end of add_detection_event
 -- resets the DELIMETER
 DELIMITER ;
 
@@ -510,5 +547,79 @@ DELIMITER ;
 
 -- ###### End of Procedures ######
 
-INSERT INTO readers (longitude, latitude, reader_range)
-    VALUES (0.0, 0.0, 20), (1.0, 1.0, 20)
+-- ##### Add one set of rows #####
+-- 1 spot, 2 reader, 1 adjacent readers, 1 user, 1 car, 3 tags, 3 observation event, 1 detects
+-- reader coverage is handled by other insert procedures
+
+-- add 1 spot
+CALL add_spot(42.341885, -71.090590);
+
+-- add 2 readers
+CALL add_reader(42.341013, -71.091145, 40);
+SET @reader_1_id = LAST_INSERT_ID();
+CALL add_reader(42.342008, -71.090526, 50);
+SET @reader_2_id = LAST_INSERT_ID();
+
+-- add 1 adjacent readers
+CALL add_adjacent_reader(@reader_1_id, @reader_2_id);
+
+-- add 1 user
+CALL add_user(
+  "test_first_name", "test_last_name",
+  "test_user", "test_pwd"
+);
+
+SET @user1_id = LAST_INSERT_ID();
+
+-- add 3 tags
+CALL add_tag();
+SET @tag1_id = LAST_INSERT_ID();
+CALL add_tag();
+SET @tag2_id = LAST_INSERT_ID();
+CALL add_tag();
+SET @tag3_id = LAST_INSERT_ID();
+
+
+-- add 1 car
+CALL add_car(
+  @user1_id, @tag1_id,
+  @tag2_id, @tag3_id
+);
+
+
+-- add 3 observation event
+CALL add_observation(
+  "2022-02-06 10:20:30",
+  13,
+  @reader_1_id,
+  @tag1_id
+);
+
+SET @observe1_id = LAST_INSERT_ID();
+
+CALL add_observation(
+  "2022-02-06 10:20:31",
+  15,
+  @reader_1_id,
+  @tag1_id
+);
+
+SET @observe2_id = LAST_INSERT_ID();
+
+CALL add_observation(
+  "2022-02-06 10:20:31",
+  14.5,
+  @reader_1_id,
+  @tag1_id
+);
+
+SET @observe3_id = LAST_INSERT_ID();
+
+-- add 1 detects car (need 3 observations)
+CALL add_detection(
+  @reader_1_id,
+  @observe1_id,
+  @observe2_id,
+  @observe3_id
+);
+
