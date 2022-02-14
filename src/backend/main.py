@@ -96,9 +96,12 @@ class WebApp(UserManager):
             timestamp = datetime.now()
             readeable_timestamp = timestamp.strftime('%Y-%m-%d %H:%M:%S')
 
-            detection_id = self.add_reader_event(
+            observation_id = self.add_observation_event(
                 readeable_timestamp, signal_strength, reader_id, tag_id)
-            return detection_id
+
+            # TODO: run algorithm to see if a detection was made
+            # TODO: if needed, call add_detection()
+            return observation_id
 
     def createMobileGetRoutes(self):
         """All routes for Get requests from the Mobile App"""
