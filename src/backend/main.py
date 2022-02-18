@@ -25,6 +25,7 @@ from flask_login import login_user, current_user, login_required, logout_user
 from user import User
 from userManager import UserManager
 from db_manager import DB_Manager
+from flask_helpers import FlaskHelper
 
 class WebApp(UserManager):
     def __init__(self, port: int, is_debug: bool, user: str, pwd: str, db: str, db_host: str):
@@ -34,6 +35,7 @@ class WebApp(UserManager):
 
         # Inheret all functions and 'self' variables (UserManager)
         UserManager.__init__(self, self._app, user, pwd, db, db_host)
+        self.flask_helper = FlaskHelper(self._app, port)
 
         # current dir
         backend_dir = Path(__file__).parent.resolve()
@@ -47,11 +49,9 @@ class WebApp(UserManager):
         logLevel = logging.INFO if self._is_debug == True else logging.ERROR
         self._logger.setLevel(logLevel)
 
-        # print urls before starting
-        self.printSites()
-
-        # create routes
+        # create routes (and print routes)
         self.generateRoutes()
+        self.flask_helper.print_routes()
 
         # dont thread so requests dont happen concurrently
         is_threaded = True
@@ -212,14 +212,6 @@ class WebApp(UserManager):
             logout_user()
             flash("Successfully logged out!", "is-success")
             return redirect(url_for("login"))
-
-    def printSites(self):
-        print("Existing URLs:")
-        print(f"http://localhost:{self._port}/ (home page)")
-        print(f"http://localhost:{self._port}/login")
-        print(f"http://localhost:{self._port}/register")
-        print(f"http://localhost:{self._port}/logout")
-        print(f"http://localhost:{self._port}/forgot-password")
 
 if __name__ == '__main__':
 
