@@ -601,7 +601,7 @@ CALL add_observation(
   "2022-02-06 10:20:31",
   15,
   @reader_1_id,
-  @tag1_id
+  @tag2_id
 );
 
 SET @observe2_id = LAST_INSERT_ID();
@@ -610,7 +610,7 @@ CALL add_observation(
   "2022-02-06 10:20:31",
   14.5,
   @reader_1_id,
-  @tag1_id
+  @tag3_id
 );
 
 SET @observe3_id = LAST_INSERT_ID();
