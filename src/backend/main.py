@@ -75,6 +75,7 @@ class WebApp(UserManager):
         self.createInfoRoutes()
         self.createMobileGetRoutes()
         self.createReaderPostRoutes()
+        self.createTagRoutes()
 
     def createInfoRoutes(self):
         """All routes for internal passing of information"""
@@ -212,6 +213,13 @@ class WebApp(UserManager):
             logout_user()
             flash("Successfully logged out!", "is-success")
             return redirect(url_for("login"))
+
+
+    def createTagRoutes(self):
+        @self._app.route("/tags/add_tag", methods=["GET"])
+        def add_tag():
+            """Returns the newly created tag's id"""
+            return {"new_tag_id": self.add_tag()}
 
 if __name__ == '__main__':
 
