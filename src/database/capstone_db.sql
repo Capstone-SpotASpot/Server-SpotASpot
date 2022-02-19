@@ -61,10 +61,10 @@ DROP TABLE IF EXISTS registered_cars;
 CREATE TABLE registered_cars
 (
     car_id INT PRIMARY KEY AUTO_INCREMENT NOT NULL,
+    registering_user INT NOT NULL,
     front_tag INT NOT NULL,
     middle_tag INT NOT NULL,
     rear_tag INT NOT NULL,
-    registering_user INT NOT NULL,
 
     -- tags are FK to the tag table
     CONSTRAINT front_tag_fk
@@ -90,12 +90,12 @@ DROP TABLE IF EXISTS parking_spot;
 CREATE TABLE parking_spot
 (
     spot_id INT PRIMARY KEY AUTO_INCREMENT NOT NULL,
+    -- allowed to be null when no car is parked
+    parked_car_id INT NULL,
     longitude FLOAT( 10, 6 ) NOT NULL,
     latitude FLOAT( 10, 6 ) NOT NULL,
 
-    -- allowed to be null when no car is parked
     time_since_parked TIMESTAMP,
-    parked_car_id INT NULL,
 
     CONSTRAINT parked_car_fk
         FOREIGN KEY (parked_car_id)
@@ -107,9 +107,10 @@ DROP TABLE IF EXISTS observation_event;
 CREATE TABLE observation_event
 (
     observation_id INT PRIMARY KEY AUTO_INCREMENT NOT NULL,
+    tag_seen_id INT NOT NULL,
+    reader_seen_id INT NOT NULL,
     time_observed DATETIME NOT NULL,
     signal_strength FLOAT NOT NULL,
-    tag_seen_id INT NOT NULL,
 
     -- Used to keep track of old events that no longer factor into algo's
     is_relevant boolean NOT NULL,
@@ -117,6 +118,10 @@ CREATE TABLE observation_event
     CONSTRAINT observation_tag_fk
         FOREIGN KEY (tag_seen_id)
         REFERENCES tag (tag_id)
+        ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT reader_tag_fk
+        FOREIGN KEY (reader_seen_id)
+        REFERENCES readers (reader_id)
         ON UPDATE CASCADE ON DELETE CASCADE
 );
 
@@ -391,8 +396,8 @@ CREATE PROCEDURE add_spot(
   END;
   START TRANSACTION; -- may need to rollback bc multiple inserts
 
-  INSERT INTO parking_spot (spot_id, longitude, latitude, parked_car_id, time_since_parked)
-  VALUES (DEFAULT, spot_long_in, spot_lat_in, NULL, NULL);
+  INSERT INTO parking_spot (spot_id, parked_car_id, longitude, latitude, time_since_parked)
+  VALUES (DEFAULT, NULL, spot_long_in, spot_lat_in, NULL);
   SET created_spot_id = LAST_INSERT_ID();
 
   -- determine if new spot is in range of an existing reader
@@ -437,8 +442,10 @@ CREATE PROCEDURE add_observation(
   END;
   START TRANSACTION; -- may need to rollback bc multiple inserts
 
-  INSERT INTO observation_event(observation_id, time_observed, signal_strength, is_relevant, tag_seen_id)
-  VALUES (DEFAULT, observation_time_in, signal_strength_in, true, seen_tag_id_in);
+  INSERT INTO observation_event
+    (observation_id, reader_seen_id, tag_seen_id, time_observed, signal_strength, is_relevant)
+  VALUES
+    (DEFAULT, reader_id_in, seen_tag_id_in, observation_time_in, signal_strength_in, true);
 
   SET created_observ_id = LAST_INSERT_ID();
   SELECT created_observ_id as 'created_observ_id';
@@ -545,6 +552,44 @@ END $$
 -- end of is_spot_taken
 -- resets the DELIMETER
 DELIMITER ;
+
+DROP PROCEDURE IF EXISTS cmp_observ_ev;
+DELIMITER $$
+-- given: an observation event
+-- returns: reader_id, observation1_id, observation2_id, observation3_id, car_id
+CREATE PROCEDURE cmp_observ_ev(
+  IN observ_id_in INT
+) BEGIN  -- use transaction bc multiple inserts and should rollback on error
+  DECLARE observation1_id INT;
+  DECLARE observation2_id INT;
+  DECLARE observation3_id INT;
+  DECLARE car_id INT;
+
+  DECLARE EXIT HANDLER FOR SQLEXCEPTION
+  BEGIN
+    SHOW ERRORS;
+    ROLLBACK;
+  END;
+  START TRANSACTION;
+
+    -- with reader_observes as (
+      select readers.reader_id, observation_event.observation_id
+      from observation_event
+      -- left outer join registered_cars ON registered_cars.front_tag = observation_event.observation_id as front_tag
+      -- left outer join registered_cars ON registered_cars.middle_tag = observation_event.observation_id as middle_tag
+      -- left outer join registered_cars ON registered_cars.rear_tag = observation_event.observation_id as rear_tag
+      join readers ON readers.reader_id = observation_event.reader_seen_id
+      where observation_event.observation_id = observ_id_in and observation_event.is_relevant
+    -- )
+    ;
+
+
+  COMMIT;
+END $$
+-- end of cmp_observ_ev
+-- resets the DELIMETER
+DELIMITER ;
+
 
 -- ###### End of Procedures ######
 
