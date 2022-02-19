@@ -53,7 +53,8 @@ CREATE TABLE tag
 (
     -- the id will get set by how the tag is programmed
     tag_id INT PRIMARY KEY NOT NULL AUTO_INCREMENT,
-    car_pos ENUM('front', 'rear', 'middle')
+    car_pos ENUM('front', 'rear', 'middle'),
+    date_added DATETIME NOT NULL
 );
 
 DROP TABLE IF EXISTS registered_cars;
@@ -326,7 +327,7 @@ CREATE PROCEDURE add_tag() BEGIN
   START TRANSACTION; -- may need to rollback bc multiple inserts
 
   -- leave car position blank as it will be filled in later
-  INSERT INTO tag (tag_id) VALUES (DEFAULT);
+  INSERT INTO tag (tag_id, date_added) VALUES (DEFAULT, NOW());
   SET new_tag_id = LAST_INSERT_ID(); -- get id of last inserted row into a table
   SELECT new_tag_id AS 'new_tag_id';
 
