@@ -113,7 +113,10 @@ class WebApp(UserManager):
 
                 # TODO: if needed, call add_detection()
                 if(detect_res):
-                    detect_id = self.add_detection(**detect_res)
+                    detect_car_spot_dict = self.add_detection(**detect_res)
+                    detect_id = detect_car_spot_dict['created_detect_id']
+                    spot_id = detect_car_spot_dict['parked_spot_id']
+                    car_id = detect_car_spot_dict['parked_car_id']
 
             # TODO: add more fields like, car_id, spot_id, and other useful info to update app
             return {

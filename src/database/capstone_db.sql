@@ -442,12 +442,19 @@ CREATE PROCEDURE add_observation(
   END;
   START TRANSACTION; -- may need to rollback bc multiple inserts
 
+  -- mark any past event with the given tag_id as irrelevant
+  UPDATE observation_event
+    set is_relevant = 0
+    where observation_event.tag_seen_id = seen_tag_id_in
+      and observation_event.is_relevant = 1;
+
   INSERT INTO observation_event
     (observation_id, reader_seen_id, tag_seen_id, time_observed, signal_strength, is_relevant)
   VALUES
     (DEFAULT, reader_id_in, seen_tag_id_in, observation_time_in, signal_strength_in, true);
 
   SET created_observ_id = LAST_INSERT_ID();
+
   SELECT created_observ_id as 'created_observ_id';
   COMMIT;
 END $$
@@ -467,6 +474,9 @@ CREATE PROCEDURE add_detection(
   IN observation_event3_id_in INT
 ) BEGIN  -- use transaction bc multiple inserts and should rollback on error
   DECLARE created_detect_id INT;
+  DECLARE parked_car_id INT;
+  DECLARE parked_spot_id INT;
+
   DECLARE EXIT HANDLER FOR SQLEXCEPTION
   BEGIN
     SHOW ERRORS;
@@ -481,7 +491,43 @@ CREATE PROCEDURE add_detection(
         observation_event2_id_in, observation_event3_id_in);
 
   SET created_detect_id = LAST_INSERT_ID();
-  SELECT created_detect_id as 'created_detect_id';
+
+  -- link car to parked spot
+  with
+  get_tags_id_cte (tag_id) as (
+    select tag_id
+    from observation_event
+    where observation_event.observation_id = observation_event1_id_in
+      or observation_event.observation_id = observation_event2_id_in
+      or observation_event.observation_id = observation_event3_id_in
+  ),
+  get_car_id_cte (car_id) as (
+    select car_id
+    from registered_cars
+    where front_tag in (select tag_id from get_tags_id)
+    limit 1
+  )
+
+  -- TODO: change this assume 1 spot per reader
+  select spot_covered_id
+    into parked_spot_id
+    from reader_coverage
+    where covering_reader_id = reader_id_in
+    limit 1;
+
+  select car_id
+    into parked_car_id
+    from get_car_id_cte
+    limit 1;
+
+  -- update parking spots to show the car as parked there
+  update parking_spot
+    set parked_car_id = parked_car_id
+    where spot_covered_id = parking_spot.spot_id;
+
+  SELECT created_detect_id as 'created_detect_id',
+    parked_car_id as 'parked_car_id',
+    parked_spot_id as 'parked_spot_id';
   COMMIT;
 END $$
 -- end of add_detection

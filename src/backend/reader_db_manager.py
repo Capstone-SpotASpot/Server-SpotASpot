@@ -47,12 +47,13 @@ class ReaderDBManager():
                       observation1_id,
                       observation2_id,
                       observation3_id) -> Optional[Dict]:
+        """Dict keys: created_detect_id, parked_car_id, parked_spot_id"""
         try:
             self.cursor.execute("call add_detection(%s, %s, %s, %s)",
                                 (reader_id, observation1_id,
                                  observation2_id, observation3_id))
-            raw_id = list(self.cursor.fetchall().values())[0]
-            return int(raw_id)
+            detect_car_spot_dict = self.cursor.fetchall()
+            return detect_car_spot_dict
         except:
             return None
 
