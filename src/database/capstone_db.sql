@@ -436,18 +436,53 @@ CREATE PROCEDURE add_observation(
   IN seen_tag_id_in INT
 ) BEGIN  -- use transaction bc multiple inserts and should rollback on error
   DECLARE created_observ_id INT;
+  DECLARE seen_car_id INT;
+
   DECLARE EXIT HANDLER FOR SQLEXCEPTION
   BEGIN
     SHOW ERRORS;
     ROLLBACK;
   END;
   START TRANSACTION; -- may need to rollback bc multiple inserts
-
   -- mark any past event with the given tag_id as irrelevant
-  UPDATE observation_event
-    set is_relevant = 0
-    where observation_event.tag_seen_id = seen_tag_id_in
-      and observation_event.is_relevant = 1;
+
+  SET seen_car_id = (
+    select car_id
+    from registered_cars
+    where registered_cars.front_tag = seen_tag_id_in
+      or registered_cars.middle_tag = seen_tag_id_in
+      or registered_cars.rear_tag = seen_tag_id_in
+    limit 1
+  );
+  -- TODO: maybe dont be so quick to mark as irrelevant
+  -- mark all events for ALL tags belonging to the car to be irrelevant
+
+  with get_tag_ids (front_tag, middle_tag, rear_tag) as (
+    select front_tag, middle_tag, rear_tag
+    from registered_cars
+    where car_id = seen_car_id
+  ),
+  get_all_observations (observation_id, tag_id) as
+  (
+    select observation_event.observation_id as observation_id, observation_event.tag_seen_id as tag_id
+    from observation_event
+    join get_tag_ids
+    on get_tag_ids.front_tag = observation_event.tag_seen_id
+      or get_tag_ids.middle_tag = observation_event.tag_seen_id
+      or get_tag_ids.rear_tag = observation_event.tag_seen_id
+  )
+
+  -- use the known observations to update relevance of all of them
+  update observation_event
+    inner join get_all_observations
+    on get_all_observations.tag_id = observation_event.tag_seen_id
+  set is_relevant = 0
+  where (observation_event.is_relevant = 1);
+
+  -- UPDATE observation_event
+  --   set is_relevant = 0
+  --   where( observation_event.tag_seen_id = seen_tag_id_in
+  --     and observation_event.is_relevant = 1);
 
   INSERT INTO observation_event
     (observation_id, reader_seen_id, tag_seen_id, time_observed, signal_strength, is_relevant)
@@ -455,8 +490,6 @@ CREATE PROCEDURE add_observation(
     (DEFAULT, reader_id_in, seen_tag_id_in, observation_time_in, signal_strength_in, true);
 
   SET created_observ_id = LAST_INSERT_ID();
-
-    -- TODO: if two observation events at diff readers (that are far apart) saw the same tag/car, mark older one as irrelevent
 
   SELECT created_observ_id as 'created_observ_id';
   COMMIT;
@@ -497,7 +530,7 @@ CREATE PROCEDURE add_detection(
   -- link car to parked spot
   with
   get_tags_id_cte (tag_id) as (
-    select tag_id
+    select tag_seen_id as tag_id
     from observation_event
     where observation_event.observation_id = observation_event1_id_in
       or observation_event.observation_id = observation_event2_id_in
@@ -506,30 +539,31 @@ CREATE PROCEDURE add_detection(
   get_car_id_cte (car_id) as (
     select car_id
     from registered_cars
-    where front_tag in (select tag_id from get_tags_id)
+    where front_tag in (select tag_id from get_tags_id_cte)
     limit 1
   )
-
-  -- TODO: change this assume 1 spot per reader
-  select spot_covered_id
-    into parked_spot_id
-    from reader_coverage
-    where covering_reader_id = reader_id_in
-    limit 1;
 
   select car_id
     into parked_car_id
     from get_car_id_cte
     limit 1;
 
+  -- TODO: change this becasue currently assume 1 spot per reader
+  select spot_covered_id
+    into parked_spot_id
+    from reader_coverage
+    where reader_coverage.covering_reader_id = reader_id_in
+    limit 1;
+
   -- update parking spots to show the car as parked there
   update parking_spot
     set parked_car_id = parked_car_id
-    where spot_covered_id = parking_spot.spot_id;
+    where parked_spot_id = parking_spot.spot_id;
 
   SELECT created_detect_id as 'created_detect_id',
     parked_car_id as 'parked_car_id',
-    parked_spot_id as 'parked_spot_id';
+    parked_spot_id as 'parked_spot_id',
+    reader_id_in as 'reader_id_in';
   COMMIT;
 END $$
 -- end of add_detection
