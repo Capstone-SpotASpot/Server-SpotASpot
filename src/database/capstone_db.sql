@@ -489,7 +489,6 @@ CREATE PROCEDURE add_detection(
                       observation_event3_id)
   VALUES (DEFAULT, reader_id_in, observation_event1_id_in,
         observation_event2_id_in, observation_event3_id_in);
-
   SET created_detect_id = LAST_INSERT_ID();
 
   -- link car to parked spot
@@ -644,22 +643,55 @@ CREATE PROCEDURE cmp_observ_ev(
         "rear" as pos
       from registered_cars
     ),
-    reader_tag_car_cte (reader_id, rel_tag_id, car_id) as (
+    -- get car seen
+    reader_tag_car_cte (reader_id, rel_tag_id, car_id, pos) as (
       select
         tag_reader_info.reader_id,
         tag_reader_info.rel_tag_id,
-        car_tags_info.car_id
+        car_tags_info.car_id,
+        car_tags_info.pos
       from car_tags_info
       join tag_reader_info on tag_reader_info.rel_tag_id = car_tags_info.car_tag
       where tag_reader_info.rel_tag_id
-    )
-    select * from reader_tag_car_cte; -- todo: remove this select when adding new functionality
-    ;
-
-    -- TODO: if two observation events at diff readers saw the same tag/car, mark older one as irrelevent
-    -- TODO: check if car has >= 2 relevent observation events at same reader
+    ),
+    get_observations (reader_id, car_id) as (
+      select reader_tag_car_cte.reader_id,
+          reader_tag_car_cte.car_id as car_id
+      from reader_tag_car_cte
+      left join observation_event
+      on reader_tag_car_cte.reader_id = observation_event.reader_seen_id
+      where observation_event.is_relevant = 1
+    ),
+    get_observe_count_cte (reader_id, car_id, num_car_observations) as (
+      select get_observations.reader_id,
+          get_observations.car_id as car_id,
+          count(*) as num_car_observations
+      from get_observations
+      group by get_observations.car_id
+    ),
+    -- Check if the car has >= 2 relevent observation events at same reader
     --      If true, return reader_id, 3 observation events, and car_id that is "parked"
+    get_if_detected (reader_id, car_id, is_car_parked) as (
+      select get_observe_count_cte.reader_id,
+        get_observe_count_cte.car_id,
+        get_observe_count_cte.num_car_observations >= 2 as is_car_parked
+      from get_observe_count_cte
+    ),
+    -- add in the observation id's
+    get_detected_and_observations (reader_id, car_id, is_car_parked, observation_id) as (
+      select get_if_detected.reader_id,
+            get_if_detected.car_id,
+            get_if_detected.is_car_parked,
+            observation_event.observation_id
+      from get_if_detected
+      left join observation_event on observation_event.reader_seen_id = get_if_detected.reader_id
+      where is_relevant = 1
+      )
 
+    select * from get_detected_and_observations;
+
+    -- TODO: if two observation events at diff readers (that are far apart) saw the same tag/car, mark older one as irrelevent
+    -- select * from reader_tag_car_cte; -- todo: remove this select when adding new functionality
 
   COMMIT;
 END $$
