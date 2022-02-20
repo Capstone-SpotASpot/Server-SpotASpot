@@ -29,16 +29,18 @@ class ReaderDBManager():
         \n    observation_time (datetime.strftime):
             The timestamp of receiving that event from the reader in '%Y-%m-%d %H:%M:%S' form
         \n    signal_strength (float):
-        \nReturns: The observation id
+        \nReturns: The observation id (-1 if error)
         """
         try:
             self.cursor.execute("call add_observation(%s, %s, %s, %s)",
                                 (observation_time, signal_strength,
                                 reader_id, tag_id ))
-            raw_id = list(self.cursor.fetchall().values())[0]
+            observ_res = self.cursor.fetchall()
+            raw_id = list(list(observ_res)[0].values())[0]
             return int(raw_id)
-        except:
-            return None
+        except Exception as err:
+            print(f"add_observation_event() error: {err}")
+            return -1
 
     def add_detection(self,
                       reader_id,

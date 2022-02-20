@@ -25,6 +25,7 @@ from flask_login import login_user, current_user, login_required, logout_user
 from user import User
 from userManager import UserManager
 from db_manager import DB_Manager
+from flask_helpers import FlaskHelper
 
 class WebApp(UserManager):
     def __init__(self, port: int, is_debug: bool, user: str, pwd: str, db: str, db_host: str):
@@ -34,6 +35,7 @@ class WebApp(UserManager):
 
         # Inheret all functions and 'self' variables (UserManager)
         UserManager.__init__(self, self._app, user, pwd, db, db_host)
+        self.flask_helper = FlaskHelper(self._app, port)
 
         # current dir
         backend_dir = Path(__file__).parent.resolve()
@@ -47,11 +49,9 @@ class WebApp(UserManager):
         logLevel = logging.INFO if self._is_debug == True else logging.ERROR
         self._logger.setLevel(logLevel)
 
-        # print urls before starting
-        self.printSites()
-
-        # create routes
+        # create routes (and print routes)
         self.generateRoutes()
+        self.flask_helper.print_routes()
 
         # dont thread so requests dont happen concurrently
         is_threaded = True
@@ -75,6 +75,7 @@ class WebApp(UserManager):
         self.createInfoRoutes()
         self.createMobileGetRoutes()
         self.createReaderPostRoutes()
+        self.createTagRoutes()
 
     def createInfoRoutes(self):
         """All routes for internal passing of information"""
@@ -85,23 +86,39 @@ class WebApp(UserManager):
         @self._app.route("/reader/send_event_data",
                         methods=["POST"],
                         defaults={'reader_id': -1, 'tag_id': -1, 'signal_strength': -1})
-        def reader_send_event_data():
-            """Params: reader_id, tag_id, and signal_stregth
-            \n:brief Stores the event in the correct database table and ensures the data is processed"""
+        def reader_send_event_data(reader_id: int, tag_id: int, signal_strength: float) -> dict:
+            """
+            \n:brief Stores the event in the correct database table and ensures the data is processed
+            \nParams: reader_id, tag_id, and signal_stregth
+            \nTest: curl -X POST "http://localhost:31025/reader/send_event_data?reader_id=2&tag_id=4"
+            """
             # Receive + Store data from reader
             args = request.args
             reader_id = args.get('reader_id')
             tag_id = args.get('tag_id')
-            signal_strength = args.get('signal_strength')
+            signal_strength = args.get('signal_strength') if args.get('signal_strength') != None else -1
             timestamp = datetime.now()
             readeable_timestamp = timestamp.strftime('%Y-%m-%d %H:%M:%S')
 
             observation_id = self.add_observation_event(
                 readeable_timestamp, signal_strength, reader_id, tag_id)
 
-            # TODO: run algorithm to see if a detection was made
-            # TODO: if needed, call add_detection()
-            return observation_id
+            # skip detection if there was an error observing
+            detect_id = None
+            if (observation_id != -1):
+                # run algorithm to see if a detection was made
+                detect_res = self.run_detect_algo(observation_id)
+                print(f"reader_id={reader_id}, tag_id={tag_id} -> observation_id={observation_id}")
+                print(f"detect_res={detect_res}")
+
+                # TODO: if needed, call add_detection()
+                if(detect_res):
+                    detect_id = self.add_detection(**detect_res)
+
+            # TODO: add more fields like, car_id, spot_id, and other useful info to update app
+            return {
+                "new_car_detected": detect_id != None
+            }
 
     def createMobileGetRoutes(self):
         """All routes for Get requests from the Mobile App"""
@@ -213,13 +230,12 @@ class WebApp(UserManager):
             flash("Successfully logged out!", "is-success")
             return redirect(url_for("login"))
 
-    def printSites(self):
-        print("Existing URLs:")
-        print(f"http://localhost:{self._port}/ (home page)")
-        print(f"http://localhost:{self._port}/login")
-        print(f"http://localhost:{self._port}/register")
-        print(f"http://localhost:{self._port}/logout")
-        print(f"http://localhost:{self._port}/forgot-password")
+
+    def createTagRoutes(self):
+        @self._app.route("/tags/add_tag", methods=["GET"])
+        def add_tag():
+            """Returns the newly created tag's id"""
+            return {"new_tag_id": self.add_tag()}
 
 if __name__ == '__main__':
 

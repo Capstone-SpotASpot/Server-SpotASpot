@@ -12,9 +12,9 @@ import pymysql
 #--------------------------------Project Includes--------------------------------#
 from reader_db_manager import ReaderDBManager
 from mobile_app_db_manager import MobileAppDBManager
+from detection_algo import DetectionAlgo
 
-
-class DB_Manager(ReaderDBManager, MobileAppDBManager):
+class DB_Manager(ReaderDBManager, MobileAppDBManager, DetectionAlgo):
     def __init__(self, user:str, pwd:str, db:str, host:str):
         """
             \n@param: user  - The username to connect to database with
@@ -38,6 +38,7 @@ class DB_Manager(ReaderDBManager, MobileAppDBManager):
 
         ReaderDBManager.__init__(self, self.conn, self.cursor)
         MobileAppDBManager.__init__(self, self.conn, self.cursor)
+        DetectionAlgo.__init__(self, self.conn, self.cursor)
 
     def cleanup(self):
         self.cursor.close()

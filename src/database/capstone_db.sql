@@ -53,17 +53,18 @@ CREATE TABLE tag
 (
     -- the id will get set by how the tag is programmed
     tag_id INT PRIMARY KEY NOT NULL AUTO_INCREMENT,
-    car_pos ENUM('front', 'rear', 'middle')
+    car_pos ENUM('front', 'rear', 'middle'),
+    date_added DATETIME NOT NULL
 );
 
 DROP TABLE IF EXISTS registered_cars;
 CREATE TABLE registered_cars
 (
     car_id INT PRIMARY KEY AUTO_INCREMENT NOT NULL,
+    registering_user INT NOT NULL,
     front_tag INT NOT NULL,
     middle_tag INT NOT NULL,
     rear_tag INT NOT NULL,
-    registering_user INT NOT NULL,
 
     -- tags are FK to the tag table
     CONSTRAINT front_tag_fk
@@ -89,12 +90,12 @@ DROP TABLE IF EXISTS parking_spot;
 CREATE TABLE parking_spot
 (
     spot_id INT PRIMARY KEY AUTO_INCREMENT NOT NULL,
+    -- allowed to be null when no car is parked
+    parked_car_id INT NULL,
     longitude FLOAT( 10, 6 ) NOT NULL,
     latitude FLOAT( 10, 6 ) NOT NULL,
 
-    -- allowed to be null when no car is parked
     time_since_parked TIMESTAMP,
-    parked_car_id INT NULL,
 
     CONSTRAINT parked_car_fk
         FOREIGN KEY (parked_car_id)
@@ -106,9 +107,10 @@ DROP TABLE IF EXISTS observation_event;
 CREATE TABLE observation_event
 (
     observation_id INT PRIMARY KEY AUTO_INCREMENT NOT NULL,
+    tag_seen_id INT NOT NULL,
+    reader_seen_id INT NOT NULL,
     time_observed DATETIME NOT NULL,
     signal_strength FLOAT NOT NULL,
-    tag_seen_id INT NOT NULL,
 
     -- Used to keep track of old events that no longer factor into algo's
     is_relevant boolean NOT NULL,
@@ -116,6 +118,10 @@ CREATE TABLE observation_event
     CONSTRAINT observation_tag_fk
         FOREIGN KEY (tag_seen_id)
         REFERENCES tag (tag_id)
+        ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT reader_tag_fk
+        FOREIGN KEY (reader_seen_id)
+        REFERENCES readers (reader_id)
         ON UPDATE CASCADE ON DELETE CASCADE
 );
 
@@ -326,7 +332,7 @@ CREATE PROCEDURE add_tag() BEGIN
   START TRANSACTION; -- may need to rollback bc multiple inserts
 
   -- leave car position blank as it will be filled in later
-  INSERT INTO tag (tag_id) VALUES (DEFAULT);
+  INSERT INTO tag (tag_id, date_added) VALUES (DEFAULT, NOW());
   SET new_tag_id = LAST_INSERT_ID(); -- get id of last inserted row into a table
   SELECT new_tag_id AS 'new_tag_id';
 
@@ -390,8 +396,8 @@ CREATE PROCEDURE add_spot(
   END;
   START TRANSACTION; -- may need to rollback bc multiple inserts
 
-  INSERT INTO parking_spot (spot_id, longitude, latitude, parked_car_id, time_since_parked)
-  VALUES (DEFAULT, spot_long_in, spot_lat_in, NULL, NULL);
+  INSERT INTO parking_spot (spot_id, parked_car_id, longitude, latitude, time_since_parked)
+  VALUES (DEFAULT, NULL, spot_long_in, spot_lat_in, NULL);
   SET created_spot_id = LAST_INSERT_ID();
 
   -- determine if new spot is in range of an existing reader
@@ -436,8 +442,10 @@ CREATE PROCEDURE add_observation(
   END;
   START TRANSACTION; -- may need to rollback bc multiple inserts
 
-  INSERT INTO observation_event(observation_id, time_observed, signal_strength, is_relevant, tag_seen_id)
-  VALUES (DEFAULT, observation_time_in, signal_strength_in, true, seen_tag_id_in);
+  INSERT INTO observation_event
+    (observation_id, reader_seen_id, tag_seen_id, time_observed, signal_strength, is_relevant)
+  VALUES
+    (DEFAULT, reader_id_in, seen_tag_id_in, observation_time_in, signal_strength_in, true);
 
   SET created_observ_id = LAST_INSERT_ID();
   SELECT created_observ_id as 'created_observ_id';
@@ -545,6 +553,76 @@ END $$
 -- resets the DELIMETER
 DELIMITER ;
 
+DROP PROCEDURE IF EXISTS cmp_observ_ev;
+DELIMITER $$
+-- given: an observation event
+-- returns: reader_id, observation1_id, observation2_id, observation3_id, car_id
+CREATE PROCEDURE cmp_observ_ev(
+  IN observ_id_in INT
+) BEGIN  -- use transaction bc multiple inserts and should rollback on error
+  DECLARE rel_tag_id INT;
+  DECLARE reader_id INT;
+
+  DECLARE EXIT HANDLER FOR SQLEXCEPTION
+  BEGIN
+    SHOW ERRORS;
+    ROLLBACK;
+  END;
+  START TRANSACTION;
+
+    -- get tag and reader id in one go and insert into variables
+    -- CTL tables for main select
+    with tag_reader_info as (
+      select
+        observation_event.tag_seen_id as rel_tag_id,
+        observation_event.reader_seen_id as reader_id
+      from observation_event
+      where observation_id = observ_id_in
+    ),
+    car_tags_info (car_id, car_tag, pos) as (
+      select
+        registered_cars.car_id as car_id,
+        front_tag as car_tag,
+        "front" as pos
+      from registered_cars
+      union all
+      select
+        registered_cars.car_id as car_id,
+        middle_tag as car_tag,
+        "mid" as pos
+      from registered_cars
+      union all
+      select
+        registered_cars.car_id,
+        rear_tag as car_tag,
+        "rear" as pos
+      from registered_cars
+    ),
+    reader_tag_car_cte (reader_id, rel_tag_id, car_id) as (
+      select
+        tag_reader_info.reader_id,
+        tag_reader_info.rel_tag_id,
+        car_tags_info.car_id
+      from car_tags_info
+      join tag_reader_info on tag_reader_info.rel_tag_id = car_tags_info.car_tag
+      where tag_reader_info.rel_tag_id
+    )
+    select * from reader_tag_car_cte; -- todo: remove this select when adding new functionality
+    ;
+
+    -- TODO: if two observation events at diff readers saw the same tag/car, mark older one as irrelevent
+    -- TODO: check if car has >= 2 relevent observation events at same reader
+    --      If true, return reader_id, 3 observation events, and car_id that is "parked"
+
+
+  COMMIT;
+END $$
+-- end of cmp_observ_ev
+-- resets the DELIMETER
+DELIMITER ;
+
+-- call cmp_observ_ev(1);
+
 -- ###### End of Procedures ######
 
 -- ##### Add one set of rows #####
@@ -563,27 +641,43 @@ SET @reader_2_id = LAST_INSERT_ID();
 -- add 1 adjacent readers
 CALL add_adjacent_reader(@reader_1_id, @reader_2_id);
 
--- add 1 user
+-- add 2 users
 CALL add_user(
   "test_first_name", "test_last_name",
   "test_user", "test_pwd"
 );
-
 SET @user1_id = LAST_INSERT_ID();
 
--- add 3 tags
+CALL add_user(
+  "test_first_name2", "test_last_name2",
+  "test_user2", "test_pwd2"
+);
+SET @user2_id = LAST_INSERT_ID();
+
+-- add 6 tags (for 2 cars)
 CALL add_tag();
 SET @tag1_id = LAST_INSERT_ID();
 CALL add_tag();
 SET @tag2_id = LAST_INSERT_ID();
 CALL add_tag();
 SET @tag3_id = LAST_INSERT_ID();
+CALL add_tag();
+SET @tag4_id = LAST_INSERT_ID();
+CALL add_tag();
+SET @tag5_id = LAST_INSERT_ID();
+CALL add_tag();
+SET @tag6_id = LAST_INSERT_ID();
 
 
--- add 1 car
+
+-- add 2 cars
 CALL add_car(
   @user1_id, @tag1_id,
   @tag2_id, @tag3_id
+);
+CALL add_car(
+  @user2_id, @tag4_id,
+  @tag5_id, @tag6_id
 );
 
 
@@ -601,7 +695,7 @@ CALL add_observation(
   "2022-02-06 10:20:31",
   15,
   @reader_1_id,
-  @tag1_id
+  @tag2_id
 );
 
 SET @observe2_id = LAST_INSERT_ID();
@@ -610,7 +704,7 @@ CALL add_observation(
   "2022-02-06 10:20:31",
   14.5,
   @reader_1_id,
-  @tag1_id
+  @tag3_id
 );
 
 SET @observe3_id = LAST_INSERT_ID();
