@@ -597,16 +597,22 @@ CREATE PROCEDURE cmp_observ_ev(
         rear_tag as car_tag,
         "rear" as pos
       from registered_cars
+    ),
+    reader_tag_car_cte (reader_id, rel_tag_id, car_id) as (
+      select
+        tag_reader_info.reader_id,
+        tag_reader_info.rel_tag_id,
+        car_tags_info.car_id
+      from car_tags_info
+      join tag_reader_info on tag_reader_info.rel_tag_id = car_tags_info.car_tag
+      where tag_reader_info.rel_tag_id
     )
-
-    select
-      tag_reader_info.reader_id,
-      tag_reader_info.rel_tag_id,
-      car_tags_info.car_id
-    from car_tags_info
-    join tag_reader_info on tag_reader_info.rel_tag_id = car_tags_info.car_tag
-    where tag_reader_info.rel_tag_id
+    select * from reader_tag_car_cte; -- todo: remove this select when adding new functionality
     ;
+
+    -- TODO: if two observation events at diff readers saw the same tag/car, mark older one as irrelevent
+    -- TODO: check if car has >= 2 relevent observation events at same reader
+    --      If true, return reader_id, 3 observation events, and car_id that is "parked"
 
 
   COMMIT;
