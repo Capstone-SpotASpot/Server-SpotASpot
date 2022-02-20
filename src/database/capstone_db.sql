@@ -455,6 +455,8 @@ CREATE PROCEDURE add_observation(
 
   SET created_observ_id = LAST_INSERT_ID();
 
+    -- TODO: if two observation events at diff readers (that are far apart) saw the same tag/car, mark older one as irrelevent
+
   SELECT created_observ_id as 'created_observ_id';
   COMMIT;
 END $$
@@ -689,9 +691,6 @@ CREATE PROCEDURE cmp_observ_ev(
       )
 
     select * from get_detected_and_observations;
-
-    -- TODO: if two observation events at diff readers (that are far apart) saw the same tag/car, mark older one as irrelevent
-    -- select * from reader_tag_car_cte; -- todo: remove this select when adding new functionality
 
   COMMIT;
 END $$
