@@ -560,10 +560,8 @@ DELIMITER $$
 CREATE PROCEDURE cmp_observ_ev(
   IN observ_id_in INT
 ) BEGIN  -- use transaction bc multiple inserts and should rollback on error
-  DECLARE observation1_id INT;
-  DECLARE observation2_id INT;
-  DECLARE observation3_id INT;
-  DECLARE car_id INT;
+  DECLARE rel_tag_id INT;
+  DECLARE reader_id INT;
 
   DECLARE EXIT HANDLER FOR SQLEXCEPTION
   BEGIN
@@ -572,15 +570,42 @@ CREATE PROCEDURE cmp_observ_ev(
   END;
   START TRANSACTION;
 
-    -- with reader_observes as (
-      select readers.reader_id, observation_event.observation_id
+    -- get tag and reader id in one go and insert into variables
+    -- CTL tables for main select
+    with tag_reader_info as (
+      select
+        observation_event.tag_seen_id as rel_tag_id,
+        observation_event.reader_seen_id as reader_id
       from observation_event
-      -- left outer join registered_cars ON registered_cars.front_tag = observation_event.observation_id as front_tag
-      -- left outer join registered_cars ON registered_cars.middle_tag = observation_event.observation_id as middle_tag
-      -- left outer join registered_cars ON registered_cars.rear_tag = observation_event.observation_id as rear_tag
-      join readers ON readers.reader_id = observation_event.reader_seen_id
-      where observation_event.observation_id = observ_id_in and observation_event.is_relevant
-    -- )
+      where observation_id = observ_id_in
+    ),
+    car_tags_info (car_id, car_tag, pos) as (
+      select
+        registered_cars.car_id as car_id,
+        front_tag as car_tag,
+        "front" as pos
+      from registered_cars
+      union all
+      select
+        registered_cars.car_id as car_id,
+        middle_tag as car_tag,
+        "mid" as pos
+      from registered_cars
+      union all
+      select
+        registered_cars.car_id,
+        rear_tag as car_tag,
+        "rear" as pos
+      from registered_cars
+    )
+
+    select
+      tag_reader_info.reader_id,
+      tag_reader_info.rel_tag_id,
+      car_tags_info.car_id
+    from car_tags_info
+    join tag_reader_info on tag_reader_info.rel_tag_id = car_tags_info.car_tag
+    where tag_reader_info.rel_tag_id
     ;
 
 
@@ -590,6 +615,7 @@ END $$
 -- resets the DELIMETER
 DELIMITER ;
 
+-- call cmp_observ_ev(1);
 
 -- ###### End of Procedures ######
 
@@ -609,27 +635,43 @@ SET @reader_2_id = LAST_INSERT_ID();
 -- add 1 adjacent readers
 CALL add_adjacent_reader(@reader_1_id, @reader_2_id);
 
--- add 1 user
+-- add 2 users
 CALL add_user(
   "test_first_name", "test_last_name",
   "test_user", "test_pwd"
 );
-
 SET @user1_id = LAST_INSERT_ID();
 
--- add 3 tags
+CALL add_user(
+  "test_first_name2", "test_last_name2",
+  "test_user2", "test_pwd2"
+);
+SET @user2_id = LAST_INSERT_ID();
+
+-- add 6 tags (for 2 cars)
 CALL add_tag();
 SET @tag1_id = LAST_INSERT_ID();
 CALL add_tag();
 SET @tag2_id = LAST_INSERT_ID();
 CALL add_tag();
 SET @tag3_id = LAST_INSERT_ID();
+CALL add_tag();
+SET @tag4_id = LAST_INSERT_ID();
+CALL add_tag();
+SET @tag5_id = LAST_INSERT_ID();
+CALL add_tag();
+SET @tag6_id = LAST_INSERT_ID();
 
 
--- add 1 car
+
+-- add 2 cars
 CALL add_car(
   @user1_id, @tag1_id,
   @tag2_id, @tag3_id
+);
+CALL add_car(
+  @user2_id, @tag4_id,
+  @tag5_id, @tag6_id
 );
 
 
