@@ -92,8 +92,8 @@ CREATE TABLE parking_spot
     spot_id INT PRIMARY KEY AUTO_INCREMENT NOT NULL,
     -- allowed to be null when no car is parked
     parked_car_id INT NULL,
-    longitude FLOAT( 10, 6 ) NOT NULL,
     latitude FLOAT( 10, 6 ) NOT NULL,
+    longitude FLOAT( 10, 6 ) NOT NULL,
 
     time_since_parked TIMESTAMP,
 
@@ -184,21 +184,22 @@ DROP FUNCTION IF EXISTS calc_coord_dist;
 DELIMITER $$
 -- checks if two pts in 3D space are in range of each other
 -- given: latitude & longitude of both points & radius
--- returns: true/false
+-- returns: The distance between the 2 points in METERS
 -- REF: https://stackoverflow.com/a/501224
 -- REF2: https://dev.mysql.com/blog-archive/spatial-reference-systems-in-mysql-8-0/
 CREATE FUNCTION calc_coord_dist (
-  long1 FLOAT (10,6),
   lat1 FLOAT (10,6),
-  long2 FLOAT (10,6),
-  lat2 FLOAT (10,6)
+  long1 FLOAT (10,6),
+  lat2 FLOAT (10,6),
+  long2 FLOAT (10,6)
 )
   RETURNS FLOAT
   DETERMINISTIC
 BEGIN
-  RETURN(ST_Distance(
-    ST_SRID(Point(lat1, long1), 4326),
-    ST_SRID(Point(lat2, long2), 4326)
+-- ST_SRID 4326
+  RETURN(ST_Distance_Sphere(
+    Point(long1, lat1),
+    Point(long2, lat2)
   ));
 END $$
 -- end of calc_coord_dist
@@ -212,10 +213,10 @@ DELIMITER $$
 -- given: latitude & longitude of both points & radius
 -- returns: true/false
 CREATE FUNCTION are_coords_in_range(
-  long1 FLOAT (10,6),
   lat1 FLOAT (10,6),
-  long2 FLOAT (10,6),
+  long1 FLOAT (10,6),
   lat2 FLOAT (10,6),
+  long2 FLOAT (10,6),
   radius FLOAT
 )
   RETURNS BOOLEAN
@@ -223,7 +224,7 @@ CREATE FUNCTION are_coords_in_range(
 BEGIN
   DECLARE coord_dist FLOAT;
   DECLARE is_in_range BOOLEAN;
-  SET coord_dist = (SELECT calc_coord_dist(long1, lat1, long2, lat2));
+  SET coord_dist = (SELECT calc_coord_dist(lat1, long1, lat2, long2));
   SET is_in_range = (SELECT coord_dist <= radius);
   RETURN(is_in_range);
 END $$
@@ -385,8 +386,8 @@ DELIMITER $$
 -- given: coordinates (longitude & latitude)
 -- returns: created spot's id
 CREATE PROCEDURE add_spot(
-  IN spot_long_in float(10,6),
-  IN spot_lat_in float(10,6)
+  IN spot_lat_in float(10,6),
+  IN spot_long_in float(10,6)
 ) BEGIN  -- use transaction bc multiple inserts and should rollback on error
   DECLARE created_spot_id INT;
   DECLARE EXIT HANDLER FOR SQLEXCEPTION
@@ -396,8 +397,8 @@ CREATE PROCEDURE add_spot(
   END;
   START TRANSACTION; -- may need to rollback bc multiple inserts
 
-  INSERT INTO parking_spot (spot_id, parked_car_id, longitude, latitude, time_since_parked)
-  VALUES (DEFAULT, NULL, spot_long_in, spot_lat_in, NULL);
+  INSERT INTO parking_spot (spot_id, parked_car_id, latitude, longitude, time_since_parked)
+  VALUES (DEFAULT, NULL, spot_lat_in, spot_long_in, NULL);
   SET created_spot_id = LAST_INSERT_ID();
 
   -- determine if new spot is in range of an existing reader
@@ -706,13 +707,14 @@ DELIMITER ;
 -- 1 spot, 2 reader, 1 adjacent readers, 1 user, 1 car, 3 tags, 3 observation event, 1 detects
 -- reader coverage is handled by other insert procedures
 
--- add 1 spot
-CALL add_spot(42.341885, -71.090590);
+-- add 2 spots
+CALL add_spot(42.341026, -71.091102);
+CALL add_spot(42.340993, -71.091123);
 
 -- add 2 readers
-CALL add_reader(42.341013, -71.091145, 40);
+CALL add_reader(42.340989, -71.091054, 15);
 SET @reader_1_id = LAST_INSERT_ID();
-CALL add_reader(42.342008, -71.090526, 50);
+CALL add_reader(42.341061, -71.091008, 15);
 SET @reader_2_id = LAST_INSERT_ID();
 
 -- add 1 adjacent readers
