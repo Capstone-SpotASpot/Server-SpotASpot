@@ -42,6 +42,7 @@ class MobileAppDBManager():
             \n\t None = reader_id does not exist
             \n\t {<spot_id>: {'status': <status>, ...}}
         """
+        # TODO: maybe change this to spot id and not reader_id??
         try:
             self.cursor.execute("call is_spot_taken(%s)", reader_id)
             # form:  [{spot_id, longitude, latitude, status}]
@@ -61,17 +62,29 @@ class MobileAppDBManager():
         except:
             return None
 
-    def get_readers_in_radius(self, x_coord: float, y_coord: float, radius: float) -> List[Dict]:
+    def calc_coord_dist(self, lat1: float, long1: float, lat2: float, long2: float) -> float:
+        try:
+            self.cursor.execute("select calc_coord_dist(%s, %s, %s, %s)",
+                                (lat1, long1,
+                                 lat2, long2))
+            return list(self.cursor.fetchall()[0].values())[0]
+        except Exception as err:
+            print(f"calc_coord_dist error: {err}")
+            return -1
+
+    def get_readers_in_radius(self, center_latitude: float, center_longitude: float, radius: float) -> Optional[List[Dict]]:
         """Given a set of coordinates, finds all readers with a given GPS distance (radius) from that point """
-        # TODO: ask the database for all the readers
-        readers_from_db = [{'id': 1, "x": 1, "y": 1},
-                         {'id': 2, "x": 10, "y": 5}
-                        ]
-        valid_reader_dict = []
-        for reader in readers_from_db:
-            if GPS.is_in_range(x_coord, y_coord, reader['x'], reader['y'], radius):
-                valid_reader_dict.append(reader)
-        return valid_reader_dict
+        try:
+            pass
+            self.cursor.execute("call get_readers_in_radius(%s, %s, %s)",
+                                (center_latitude, center_longitude, radius))
+            readers_in_range_dict = self.cursor.fetchall()
+            return readers_in_range_dict
+
+        except Exception as err:
+            print(f"get_readers_in_radius error: {err}")
+            return None
+
 
     def add_car(self,
         user_id: int,

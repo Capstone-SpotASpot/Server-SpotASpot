@@ -78,6 +78,7 @@ class DB_Manager(ReaderDBManager, MobileAppDBManager, DetectionAlgo):
             print(f"add_tag error: {err}")
             return -1
 
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Database Python Connector")
     parser.add_argument(

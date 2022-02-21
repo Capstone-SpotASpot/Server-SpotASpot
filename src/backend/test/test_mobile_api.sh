@@ -61,26 +61,39 @@ else
 fi
 
 
-echo "TEST 1 - Getting the meters within the radius. For now the hardcoded meters are at: (1, 1) and (10, 5)"
-curl $url'/mobile/get_local_readers?x_coord=0&y_coord=0&radius=20'
+echo -n "TEST 1 - Getting the meters within the radius. "
+echo "For now the readers are at: (42.340989, -71.091054), (42.341061, -71.091008)"
+# make its center be the same as a reader
+echo "TEST 1.1.1 - Test center MATCHING a reader"
+curl $url'/mobile/get_local_readers?latitude=42.340989&longitude=-71.091054&radius=15'
 
-echo "TEST 1.1 - Test Getting the meters within the radius but not giving the radius (should error)"
-curl $url'/mobile/get_local_readers?x_coord=0&y_coord=0'
+echo ""
+echo "TEST 1.1.1 - Test center being NEAR a reader"
+curl $url'/mobile/get_local_readers?latitude=42.340960&longitude=-71.0910540&radius=15'
 
-echo "TEST 1.2 - Test Getting the meters within the radius but not giving the x coordinate (should error)"
-curl $url'/mobile/get_local_readers?x_coord=0&y_coord=0'
+# echo ""
+# echo "TEST 1.2.1 - Test Getting the meters within the radius but not giving the radius (should error)"
+# curl $url'/mobile/get_local_readers?latitude=42.340989&longitude=-71.091054'
 
-echo "TEST 1.3 - Test Getting the meters within the radius but not giving the y coordinate (should error)"
-curl $url'/mobile/get_local_readers?x_coord=0&y_coord=0'
+# echo ""
+# echo "TEST 1.2.1 - Test Getting the meters within the radius but not giving the lat (should error)"
+# curl $url'/mobile/get_local_readers?radius=20&longitude=-71.091054'
+
+# echo ""
+# echo "TEST 1.2.1 - Test Getting the meters within the radius but not giving the long (should error)"
+# curl $url'/mobile/get_local_readers?latitude=42.340989&radius=20'
 
 
-echo -n "TEST 2 - Given Reader ID, RETURN its status."
-echo "Only available readers are reader 0 = free, reader 1 = taken."
-echo "Testing reader 0...expect a return of False because it is free"
-curl $url'/mobile/get_is_spot_taken/0'
+# echo ""
+# echo -n "TEST 2 - Given Reader ID, RETURN its status."
+# echo "Only available readers are reader 0 = free, reader 1 = taken."
+# echo "Testing reader 0...expect a return of False because it is free"
+# curl $url'/mobile/get_is_spot_taken/0'
 
-echo "Testing reader 1...expect a return of True because it is taken"
-curl $url'/mobile/get_is_spot_taken/1'
+# echo ""
+# echo "Testing reader 1...expect a return of True because it is taken"
+# curl $url'/mobile/get_is_spot_taken/1'
 
-echo "Testing reader 500(doesn't exist)...expect a return of None/Null because reader does not exist"
-curl $url'/mobile/get_is_spot_taken/500'
+# echo ""
+# echo "Testing reader 500(doesn't exist)...expect a return of None/Null because reader does not exist"
+# curl $url'/mobile/get_is_spot_taken/500'

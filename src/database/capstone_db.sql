@@ -161,7 +161,7 @@ CREATE TABLE detects
     -- it takes 3 tags to make the observation - a full car
     observation_event1_id INT NOT NULL,
     observation_event2_id INT NOT NULL,
-    
+
     -- the 3rd one CAN be NULL. i.e. a detection can be made after only 2 tags are seen
     observation_event3_id INT NULL,
 
@@ -807,6 +807,33 @@ DELIMITER ;
 
 
 -- call get_observ_id_from_parked_car(2);
+
+DROP PROCEDURE IF EXISTS get_readers_in_radius;
+DELIMITER $$
+-- given: lat of center, long of center, radius
+-- returns: reader_id, lat, long of all readers within radius of reader_id_in
+CREATE PROCEDURE get_readers_in_radius(
+  IN center_lat FLOAT (10, 6),
+  IN center_long FLOAT (10, 6),
+  IN radius FLOAT
+) BEGIN  -- use transaction bc multiple inserts and should rollback on error
+  DECLARE EXIT HANDLER FOR SQLEXCEPTION
+  BEGIN
+    SHOW ERRORS;
+    ROLLBACK;
+  END;
+  START TRANSACTION; -- may need to rollback bc multiple inserts
+
+  select reader_id, latitude, longitude
+    from readers
+    where (select are_coords_in_range(center_lat, center_long, latitude, longitude, radius) );
+
+
+  COMMIT;
+END $$
+-- end of get_readers_in_radius
+-- resets the DELIMETER
+DELIMITER ;
 
 -- ###### End of Procedures ######
 

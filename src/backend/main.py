@@ -134,7 +134,7 @@ class WebApp(UserManager):
             if (observation_id != -1):
                 # run algorithm to see if a detection was made
                 detect_res = self.run_detect_algo(observation_id)
-                print(f"detect_res={detect_res}")
+                # print(f"detect_res={detect_res}")
 
                 # make sure return doesnt have Nones in it
                 if(detect_res['is_car_parked'] is True):
@@ -164,19 +164,24 @@ class WebApp(UserManager):
 
         @self._app.route("/mobile/get_local_readers",
                         methods=["GET"],
-                        defaults={'radius': None, 'x_coord': None, 'y_coord': None})
-        def get_local_readers(radius: float, x_coord: float, y_coord: float):
+                         defaults={'radius': None, 'latitude': None, 'longitude': None})
+        def get_local_readers(radius: float, latitude: float, longitude: float):
             args = request.args
-            radius = float(args.get('radius')) if args.get('radius') is not None else None
-            x_coord = float(args.get('x_coord')) if args.get('x_coord') is not None else None
-            y_coord = float(args.get('y_coord')) if args.get('y_coord') is not None else None
+            try:
+                radius = float(args.get('radius')) if args.get('radius') is not None else None
+                center_latitude = float(args.get('latitude')) if args.get('latitude') is not None else None
+                center_longitude  = float(args.get('longitude')) if args.get('longitude') is not None else None
+            except Exception as err:
+                print(f"Error parsing inputs to /mobile/get_local_readers. Error = {err}")
+                radius = None
+                center_latitude = None
+                center_longitude = None
             """Given GPS coordiantes and a radius,
             returns a list of dictionaries containing all readers in that radius"""
             # if the request is not fully formed, do not accept it
-            # TODO: CALL DB PROCEDURE TO DO THIS INSTEAD
-            if radius is not None and x_coord is not None and y_coord is not None:
+            if radius is not None and center_latitude is not None and center_longitude is not None:
                 # only return the reader's id and their gps coords that match
-                return flask.jsonify(self.get_readers_in_radius(x_coord, y_coord, radius))
+                return flask.jsonify(self.get_readers_in_radius(center_latitude, center_longitude, radius))
             else:
                 return "Parameters are missing\n"
 
