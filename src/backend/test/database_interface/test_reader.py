@@ -48,7 +48,7 @@ class TestReader(unittest.TestCase):
         inserted_row = cls._db_manager.cursor.fetchone()
 
         add_observ_success = observation_id != None
-        add_detection_success = detection_id != None
+        add_detection_and_park_car_success = detection_id != None
 
         # Delete the entry(s) from the table if they were added
         # do BEFORE asserting. So on failure, rows deleted before program closes
@@ -56,7 +56,7 @@ class TestReader(unittest.TestCase):
             cls._db_manager.cursor.execute(
                 "DELETE FROM observation_event WHERE observation_id = '%s'", observation_id)
             cls._db_manager.conn.commit()
-        if add_detection_success:
+        if add_detection_and_park_car_success:
             cls._db_manager.cursor.execute(
                 "DELETE FROM detects WHERE detection_id = '%s'", detection_id)
             cls._db_manager.conn.commit()
@@ -70,7 +70,7 @@ class TestReader(unittest.TestCase):
         self.assertTrue(add_observ_success,
                         f"observation_id = {observation_id}. Cant be None")
 
-        self.assertTrue(add_detection_success,
+        self.assertTrue(add_detection_and_park_car_success,
                         f"detection_id = {detection_id}. Cant be None")
 
         self.assertTrue(str(inserted_row['time_observed']) == readeable_timestamp_in,

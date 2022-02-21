@@ -161,7 +161,9 @@ CREATE TABLE detects
     -- it takes 3 tags to make the observation - a full car
     observation_event1_id INT NOT NULL,
     observation_event2_id INT NOT NULL,
-    observation_event3_id INT NOT NULL,
+    
+    -- the 3rd one CAN be NULL. i.e. a detection can be made after only 2 tags are seen
+    observation_event3_id INT NULL,
 
     CONSTRAINT detects_reader_fk
         FOREIGN KEY (detecting_reader_id)
@@ -486,34 +488,6 @@ CREATE PROCEDURE add_observation(
   );
   -- TODO: maybe dont be so quick to mark as irrelevant
   -- mark all events for ALL tags belonging to the car to be irrelevant
-
-  with get_tag_ids (front_tag, middle_tag, rear_tag) as (
-    select front_tag, middle_tag, rear_tag
-    from registered_cars
-    where car_id = seen_car_id
-  ),
-  get_all_observations (observation_id, tag_id) as
-  (
-    select observation_event.observation_id as observation_id, observation_event.tag_seen_id as tag_id
-    from observation_event
-    join get_tag_ids
-    on get_tag_ids.front_tag = observation_event.tag_seen_id
-      or get_tag_ids.middle_tag = observation_event.tag_seen_id
-      or get_tag_ids.rear_tag = observation_event.tag_seen_id
-  )
-
-  -- use the known observations to update relevance of all of them
-  update observation_event
-    inner join get_all_observations
-    on get_all_observations.tag_id = observation_event.tag_seen_id
-  set is_relevant = 0
-  where (observation_event.is_relevant = 1);
-
-  -- UPDATE observation_event
-  --   set is_relevant = 0
-  --   where( observation_event.tag_seen_id = seen_tag_id_in
-  --     and observation_event.is_relevant = 1);
-
   INSERT INTO observation_event
     (observation_id, reader_seen_id, tag_seen_id, time_observed, signal_strength, is_relevant)
   VALUES
@@ -528,12 +502,12 @@ END $$
 -- resets the DELIMETER
 DELIMITER ;
 
-DROP PROCEDURE IF EXISTS add_detection;
+DROP PROCEDURE IF EXISTS add_detection_and_park_car;
 DELIMITER $$
 -- adds 3 reader observation event
 -- given: observed time, signal strength, reader id, tag id
 -- returns: created id
-CREATE PROCEDURE add_detection(
+CREATE PROCEDURE add_detection_and_park_car(
   IN reader_id_in INT,
   IN observation_event1_id_in INT,
   IN observation_event2_id_in INT,
@@ -578,6 +552,28 @@ CREATE PROCEDURE add_detection(
     from get_car_id_cte
     limit 1;
 
+  with get_tag_ids (front_tag, middle_tag, rear_tag) as (
+    select front_tag, middle_tag, rear_tag
+    from registered_cars
+    where car_id = parked_car_id
+  ),
+  get_all_observations (observation_id, tag_id) as
+  (
+    select observation_event.observation_id as observation_id, observation_event.tag_seen_id as tag_id
+    from observation_event
+    join get_tag_ids
+    on get_tag_ids.front_tag = observation_event.tag_seen_id
+      or get_tag_ids.middle_tag = observation_event.tag_seen_id
+      or get_tag_ids.rear_tag = observation_event.tag_seen_id
+  )
+
+  -- use the known observations to update relevance of all of them. Only do so AFTER detection event
+  update observation_event
+    inner join get_all_observations
+    on get_all_observations.tag_id = observation_event.tag_seen_id
+  set is_relevant = 0
+  where (observation_event.is_relevant = 1);
+
   -- TODO: change this becasue currently assume 1 spot per reader
   -- Maybe depending on which tags are seen, know which spot it is
   --    i.e.: see middle and rear tag, prob in spot further left/right
@@ -592,13 +588,14 @@ CREATE PROCEDURE add_detection(
     set parked_car_id = parked_car_id
     where parked_spot_id = parking_spot.spot_id;
 
+
   SELECT created_detect_id as 'created_detect_id',
     parked_car_id as 'parked_car_id',
     parked_spot_id as 'parked_spot_id',
     reader_id_in as 'reader_id_in';
   COMMIT;
 END $$
--- end of add_detection
+-- end of add_detection_and_park_car
 -- resets the DELIMETER
 DELIMITER ;
 
@@ -670,7 +667,7 @@ DELIMITER ;
 DROP PROCEDURE IF EXISTS cmp_observ_ev;
 DELIMITER $$
 -- given: an observation event
--- returns: reader_id, observation1_id, observation2_id, observation3_id, car_id
+-- returns: reader_id, car_id, is_car_parked, observation_id
 CREATE PROCEDURE cmp_observ_ev(
   IN observ_id_in INT
 ) BEGIN  -- use transaction bc multiple inserts and should rollback on error
@@ -765,7 +762,51 @@ END $$
 -- resets the DELIMETER
 DELIMITER ;
 
--- call cmp_observ_ev(1);
+DROP PROCEDURE IF EXISTS get_observ_id_from_parked_car;
+DELIMITER $$
+-- given: car_id of the car that the algo decided is parked
+-- returns: 2-3 rows showing tag_id, observ_id for the 2 or 3 events that resulted in a car getting "parked"
+CREATE PROCEDURE get_observ_id_from_parked_car(
+  IN car_id_in INT
+) BEGIN  -- use transaction bc multiple inserts and should rollback on error
+  DECLARE EXIT HANDLER FOR SQLEXCEPTION
+  BEGIN
+    SHOW ERRORS;
+    ROLLBACK;
+  END;
+  START TRANSACTION; -- may need to rollback bc multiple inserts
+
+  with car_tags_info_cte (car_tag_id) as (
+      select
+        front_tag as car_tag_id
+      from registered_cars
+      where registered_cars.car_id = car_id_in
+      union all
+      select
+        middle_tag as car_tag_id
+      from registered_cars
+      where registered_cars.car_id = car_id_in
+      union all
+      select
+        rear_tag as car_tag_id
+      from registered_cars
+      where registered_cars.car_id = car_id_in
+  ),
+  get_observe_event_cte (tag_id, observ_id) as (
+    select car_tags_info_cte.car_tag_id as tag_id, observation_event.observation_id as observ_id
+    from car_tags_info_cte
+    join observation_event on observation_event.tag_seen_id = car_tags_info_cte.car_tag_id
+  )
+
+  select * from get_observe_event_cte;
+
+  COMMIT;
+END $$
+-- resets the DELIMETER
+DELIMITER ;
+
+
+-- call get_observ_id_from_parked_car(2);
 
 -- ###### End of Procedures ######
 
@@ -855,7 +896,7 @@ CALL add_observation(
 SET @observe3_id = LAST_INSERT_ID();
 
 -- add 1 detects car (need 3 observations)
-CALL add_detection(
+CALL add_detection_and_park_car(
   @reader_1_id,
   @observe1_id,
   @observe2_id,

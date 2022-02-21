@@ -42,19 +42,23 @@ class ReaderDBManager():
             print(f"add_observation_event() error: {err}")
             return -1
 
-    def add_detection(self,
+    def add_detection_and_park_car(self,
                       reader_id,
                       observation1_id,
                       observation2_id,
                       observation3_id) -> Optional[Dict]:
         """Dict keys: created_detect_id, parked_car_id, parked_spot_id"""
         try:
-            self.cursor.execute("call add_detection(%s, %s, %s, %s)",
+            self.cursor.execute("call add_detection_and_park_car(%s, %s, %s, %s)",
                                 (reader_id, observation1_id,
                                  observation2_id, observation3_id))
-            detect_car_spot_dict = self.cursor.fetchall()
+            # should only return 1 row of info & not have {'Level': "Error"}
+            detect_car_spot_dict = list(self.cursor.fetchall())[0]
+            if 'Level' in detect_car_spot_dict and detect_car_spot_dict['Level'] == "Error":
+                return None
             return detect_car_spot_dict
-        except:
+        except Exception as err:
+            print(f"add_detection_and_park_car() err: {err}")
             return None
 
     def reader_cleanup(self):

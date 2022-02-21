@@ -109,9 +109,13 @@ class WebApp(UserManager):
             args = request.args
             reader_id = args.get('reader_id')
             tag_id = args.get('tag_id')
-            signal_strength = args.get('signal_strength') if args.get('signal_strength') != None else -1
+            signal_strength = args.get('signal_strength') if 'signal_strength' in args else -1
             timestamp = datetime.now()
             readeable_timestamp = timestamp.strftime('%Y-%m-%d %H:%M:%S')
+
+            detect_id = None
+            spot_id = None
+            car_id = None
 
             observation_id = self.add_observation_event(
                 readeable_timestamp, signal_strength, reader_id, tag_id)
@@ -121,19 +125,24 @@ class WebApp(UserManager):
             if (observation_id != -1):
                 # run algorithm to see if a detection was made
                 detect_res = self.run_detect_algo(observation_id)
-                print(f"reader_id={reader_id}, tag_id={tag_id} -> observation_id={observation_id}")
                 print(f"detect_res={detect_res}")
 
-                # TODO: if needed, call add_detection()
-                if(detect_res):
-                    detect_car_spot_dict = self.add_detection(**detect_res)
-                    detect_id = detect_car_spot_dict['created_detect_id']
-                    spot_id = detect_car_spot_dict['parked_spot_id']
-                    car_id = detect_car_spot_dict['parked_car_id']
+                # make sure return doesnt have Nones in it
+                if(detect_res['is_car_parked'] is True):
+                    detect_car_spot_dict = self.add_detection_and_park_car(
+                        detect_res['reader_id'], detect_res['observation1_id'],
+                        detect_res['observation2_id'], detect_res['observation3_id']
+                    )
+                    if (detect_car_spot_dict != None):
+                        detect_id = detect_car_spot_dict['created_detect_id']
+                        spot_id = detect_car_spot_dict['parked_spot_id']
+                        car_id = detect_car_spot_dict['parked_car_id']
 
-            # TODO: add more fields like, car_id, spot_id, and other useful info to update app
             return {
-                "new_car_detected": detect_id != None
+                "is_car_parked": detect_res['is_car_parked'],
+                "new_car_detected": car_id,
+                "created_detect_id": detect_id,
+                "parked_spot_id": spot_id
             }
 
     def createMobileGetRoutes(self):

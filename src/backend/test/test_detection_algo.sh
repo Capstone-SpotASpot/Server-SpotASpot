@@ -61,4 +61,6 @@ else
 fi
 
 echo "Testing a Reader Detecting a Tag..."
-curl $url"/reader/send_event_data?reader_id=2&tag_id=4"
+curl -X POST $url'/reader/send_event_data?reader_id=2&tag_id=4'
+curl -X POST $url'/reader/send_event_data?reader_id=2&tag_id=5'
+curl -X POST $url'/reader/send_event_data?reader_id=2&tag_id=6'
