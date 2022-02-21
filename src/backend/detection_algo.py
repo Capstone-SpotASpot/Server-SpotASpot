@@ -5,11 +5,20 @@ import os
 import sys
 from typing import Optional, Dict, List
 from datetime import datetime
+from typing import TypedDict
 
 #-----------------------------3RD PARTY DEPENDENCIES-----------------------------#
 import pymysql
 from pymysql import connections, cursors
 from pymysql.cursors import Cursor
+
+class DetectAlgoRes(TypedDict):
+    reader_id: int
+    observation1_id: int
+    observation2_id: Optional[int]
+    observation3_id: Optional[int]
+    is_car_parked: bool
+    car_id: int
 
 class DetectionAlgo():
     def __init__(self, conn: pymysql.Connection, cursor: Cursor) -> None:
@@ -39,7 +48,7 @@ class DetectionAlgo():
             print(f"get_observ_id_from_parked_car() err: {err}")
             return None
 
-    def run_detect_algo(self, observ_id) -> Dict[str, int]:
+    def run_detect_algo(self, observ_id) -> DetectAlgoRes:
         """If the observ_id leads to detection of parked car, return necessary info for add_detection_and_park_car()
         \n:return dict of {reader_id, observation1_id, observation2_id, observation3_id, is_car_parked, car_id}.
         \n:Note: the observation id's could be null.
@@ -52,13 +61,13 @@ class DetectionAlgo():
 
         # get ( reader_id, car_id, is_car_parked, observation_id)
         cmp_observ_dict = self.cmp_observ_ev(observ_id)
-
-        detection_components_dict = {
+        is_car_parked = True if cmp_observ_dict['is_car_parked'] == 1 else 0
+        detection_components_dict : DetectAlgoRes = {
             "reader_id": cmp_observ_dict['reader_id'],
             "observation1_id": None,
             "observation2_id": None,
             "observation3_id": None,
-            "is_car_parked": True if cmp_observ_dict['is_car_parked'] == 1 else 0,
+            "is_car_parked": is_car_parked,
             "car_id": cmp_observ_dict['car_id']
         }
 

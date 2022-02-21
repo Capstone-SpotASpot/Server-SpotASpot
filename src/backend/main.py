@@ -10,6 +10,7 @@ from pathlib import Path
 import secrets
 import getpass
 from datetime import  datetime
+from typing import TypedDict
 
 #-----------------------------3RD PARTY DEPENDENCIES-----------------------------#
 import flask
@@ -26,6 +27,12 @@ from user import User
 from userManager import UserManager
 from db_manager import DB_Manager
 from flask_helpers import FlaskHelper
+
+class SendEventDataRes(TypedDict):
+    is_car_parked: bool
+    car_detected: int
+    detection_id: int
+    parked_spot_id: int
 
 class WebApp(UserManager):
     def __init__(self, port: int, is_debug: bool, user: str, pwd: str, db: str, db_host: str):
@@ -99,7 +106,9 @@ class WebApp(UserManager):
         @self._app.route("/reader/send_event_data",
                         methods=["POST"],
                         defaults={'reader_id': -1, 'tag_id': -1, 'signal_strength': -1})
-        def reader_send_event_data(reader_id: int, tag_id: int, signal_strength: float) -> dict:
+        def reader_send_event_data( reader_id: int,
+                                    tag_id: int,
+                                    signal_strength: float) -> SendEventDataRes:
             """
             \n:brief Stores the event in the correct database table and ensures the data is processed
             \nParams: reader_id, tag_id, and signal_stregth
@@ -140,8 +149,8 @@ class WebApp(UserManager):
 
             return {
                 "is_car_parked": detect_res['is_car_parked'],
-                "new_car_detected": car_id,
-                "created_detect_id": detect_id,
+                "car_detected": car_id,
+                "detection_id": detect_id,
                 "parked_spot_id": spot_id
             }
 
