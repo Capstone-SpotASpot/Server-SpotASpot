@@ -13,7 +13,6 @@ from pymysql import connections, cursors
 from pymysql.cursors import Cursor
 
 #--------------------------------Project Includes--------------------------------#
-from gps import GPS
 
 class MobileAppDBManager():
     def __init__(self, conn: pymysql.Connection, cursor: Cursor) -> None:
