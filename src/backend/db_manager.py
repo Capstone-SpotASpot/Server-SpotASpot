@@ -48,13 +48,16 @@ class DB_Manager(ReaderDBManager, MobileAppDBManager, DetectionAlgo):
         "WIP"
         pass
 
-    def add_reader(self, latitude: float, longitude: float, reader_range: float) -> int:
+    def add_reader(self, latitude: float, longitude: float, reader_range: float, reader_front_bearing: float) -> int:
         """Add a reader to the database.
         \n reader_range is the radius of the readers range in meters(m)
+        \n reader_front_bearing is the direction the reader is facing (in degrees) relative to true north.
+            This can be obtained via the compass app on a phone, google maps, etc...
+            while standing near the reader in the direction it faces
         \n:return the added reader's id if added successfully. -1 if error."""
         try:
-            self.cursor.execute("call add_reader(%s, %s, %s)",
-                                (latitude, longitude, reader_range))
+            self.cursor.execute("call add_reader(%s, %s, %s, %s)",
+                                (latitude, longitude, reader_range, reader_front_bearing))
             # ignore name of field and just get the value
             return list(self.cursor.fetchall()[0].values())[0]
         except Exception as err:

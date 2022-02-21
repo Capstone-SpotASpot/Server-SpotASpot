@@ -83,6 +83,19 @@ class WebApp(UserManager):
 
     def createReaderPostRoutes(self):
         """All routes for receiving information from the reader's"""
+        @self._app.route("/reader/add_reader", methods=["POST"])
+        def add_new_reader():
+            """Add a new reader given latitude, longitude, reader_range, reader_front_bearing"""
+            args = request.args
+            lat = args.get("latitude")
+            long = args.get("longitude")
+            range = args.get("reader_range")
+            reader_front_bearing = args.get("reader_bearing")
+            new_reader_id = self.add_reader(lat, long, range, reader_front_bearing)
+            return {
+                "new_reader_added": new_reader_id != None
+            }
+
         @self._app.route("/reader/send_event_data",
                         methods=["POST"],
                         defaults={'reader_id': -1, 'tag_id': -1, 'signal_strength': -1})

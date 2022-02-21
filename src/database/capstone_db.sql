@@ -13,14 +13,18 @@ CREATE TABLE readers
     reader_id INT PRIMARY KEY NOT NULL AUTO_INCREMENT,
     latitude FLOAT( 10, 6 ) NOT NULL,
     longitude FLOAT( 10, 6 ) NOT NULL,
-    reader_range FLOAT NOT NULL -- range in meters
+    -- range in meters
+    reader_range FLOAT NOT NULL,
+    -- facing direction / bearing of reader relative to true north (in degrees).
+    -- shows where the reader is pointing
+    front_bearing FLOAT NOT NULL
 );
 
 -- Create recursive reader relationship
 DROP TABLE IF EXISTS adjacent_readers;
 CREATE TABLE adjacent_readers
 (
-    adjacency_id INT PRIMARY KEY NOT NULL AUTO_INCREMENT,
+    adjacency_id INT PRIMARY KEY AUTO_INCREMENT,
 
     -- Pairs 2 readers together if they are in range of each other.
     -- The order does NOT matter
@@ -135,6 +139,8 @@ CREATE TABLE reader_coverage
     covering_reader_id INT NOT NULL,
     spot_covered_id INT NOT NULL,
 
+    -- TODO: add a field for "left" right, middle - spot pos relative to reader
+
     -- create FK for association table relationships
     CONSTRAINT reader_cover_fk
         FOREIGN KEY (covering_reader_id)
@@ -232,6 +238,28 @@ END $$
 -- resets the DELIMETER
 DELIMITER ;
 
+DROP FUNCTION IF EXISTS get_reader_id_from_coords;
+DELIMITER $$
+CREATE FUNCTION get_reader_id_from_coords (
+  latitude_in FLOAT (10,6),
+  longitude_in FLOAT (10,6)
+)
+--  given the lat and long of a reader, get its id
+  RETURNS INT
+  READS SQL DATA
+  DETERMINISTIC
+BEGIN
+  return (
+    select reader_id
+    from readers
+    where latitude = latitude_in and longitude = longitude_in
+    limit 1);
+
+END $$
+-- end of get_reader_id_from_coords
+-- resets the DELIMETER
+DELIMITER ;
+
 -- ###### End of Functions ######
 
 
@@ -279,7 +307,9 @@ DELIMITER $$
 CREATE PROCEDURE add_reader(
   IN p_reader_lat FLOAT( 10, 6 ),
   IN p_reader_long FLOAT( 10, 6 ),
-  IN p_reader_range FLOAT
+  IN p_reader_range FLOAT,
+  -- angle (in degrees) relative to true north = baering
+  IN p_reader_bearing FLOAT
 ) BEGIN
   DECLARE created_reader_id INT;
   DECLARE EXIT HANDLER FOR SQLEXCEPTION
@@ -290,8 +320,8 @@ CREATE PROCEDURE add_reader(
   START TRANSACTION;
 
   -- create the reader row
-  INSERT INTO readers (reader_id, latitude, longitude, reader_range)
-    VALUES (DEFAULT, p_reader_lat, p_reader_long, p_reader_range);
+  INSERT INTO readers (reader_id, latitude, longitude, reader_range, front_bearing)
+    VALUES (DEFAULT, p_reader_lat, p_reader_long, p_reader_range, p_reader_bearing);
   SET created_reader_id = LAST_INSERT_ID();
 
   -- determine which spots are in range of the reader
@@ -549,6 +579,8 @@ CREATE PROCEDURE add_detection(
     limit 1;
 
   -- TODO: change this becasue currently assume 1 spot per reader
+  -- Maybe depending on which tags are seen, know which spot it is
+  --    i.e.: see middle and rear tag, prob in spot further left/right
   select spot_covered_id
     into parked_spot_id
     from reader_coverage
@@ -746,10 +778,10 @@ CALL add_spot(42.341026, -71.091102);
 CALL add_spot(42.340993, -71.091123);
 
 -- add 2 readers
-CALL add_reader(42.340989, -71.091054, 15);
-SET @reader_1_id = LAST_INSERT_ID();
-CALL add_reader(42.341061, -71.091008, 15);
-SET @reader_2_id = LAST_INSERT_ID();
+CALL add_reader(42.340989, -71.091054, 15, 288);
+SET @reader_1_id = (SELECT get_reader_id_from_coords(42.340989, -71.091054));
+CALL add_reader(42.341061, -71.091008, 15, 287);
+SET @reader_2_id = (SELECT get_reader_id_from_coords(42.341061, -71.091008));
 
 -- add 1 adjacent readers
 CALL add_adjacent_reader(@reader_1_id, @reader_2_id);
