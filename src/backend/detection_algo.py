@@ -44,7 +44,12 @@ class DetectionAlgo():
         \n:return dict of {reader_id, observation1_id, observation2_id, observation3_id, is_car_parked, car_id}.
         \n:Note: the observation id's could be null.
         \n:CHECK IF CAR PARKED: use the `is_car_parked` field"""
-        # TODO: call db procedure for detection algo
+        # TODO: Call DB procedure to see if car with THIS tag is ALREADY parked in THIS reader's spot
+        # "is this tag on a car that is ALREADY parked in this spot"
+        # IF yes -> update detection to include this new observation
+        #   OR can ignore this observation and NOT start a new potential detection / mark this reading as irrelevant
+
+
         # get ( reader_id, car_id, is_car_parked, observation_id)
         cmp_observ_dict = self.cmp_observ_ev(observ_id)
 
