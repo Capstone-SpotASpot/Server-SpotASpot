@@ -173,6 +173,7 @@ class WebApp(UserManager):
             """Given GPS coordiantes and a radius,
             returns a list of dictionaries containing all readers in that radius"""
             # if the request is not fully formed, do not accept it
+            # TODO: CALL DB PROCEDURE TO DO THIS INSTEAD
             if radius is not None and x_coord is not None and y_coord is not None:
                 # only return the reader's id and their gps coords that match
                 return flask.jsonify(self.get_readers_in_radius(x_coord, y_coord, radius))
