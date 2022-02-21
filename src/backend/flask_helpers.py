@@ -17,6 +17,7 @@ class FlaskHelper():
         for rule in self.app.url_map.iter_rules():
             url = f"http://localhost:{self.port}{rule}"
             links.append(url)
+        links.sort()
         return links
 
     def gen_site_map(self):
