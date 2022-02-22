@@ -55,6 +55,7 @@ class ReaderDBManager():
             # should only return 1 row of info & not have {'Level': "Error"}
             detect_car_spot_dict = list(self.cursor.fetchall())[0]
             if 'Level' in detect_car_spot_dict and detect_car_spot_dict['Level'] == "Error":
+                print(f"add_detection_and_park_car() err: {detect_car_spot_dict}")
                 return None
             return detect_car_spot_dict
         except Exception as err:

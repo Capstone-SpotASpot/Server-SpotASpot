@@ -33,10 +33,13 @@ class DetectionAlgo():
         try:
             self.cursor.execute("call cmp_observ_ev(%s)", (observ_id))
             cmp_observ_res = list(self.cursor.fetchall())[0]
+            if 'Level' in cmp_observ_res and cmp_observ_res['Level'] == "Error":
+                print(f"cmp_observ_ev() err: {cmp_observ_res}")
+                return None
             return cmp_observ_res
         except Exception as err:
             print(f"cmp_observ_ev() error: {err}")
-            return -1
+            return None
 
     def get_observ_id_from_parked_car(self, car_id_in: int) -> Optional[List[Dict]]:
         """:return a 2-3 row dict containing <tag_id, observ_id> that resulted in the algo calling this car parked"""
@@ -61,6 +64,8 @@ class DetectionAlgo():
 
         # get ( reader_id, car_id, is_car_parked, observation_id)
         cmp_observ_dict = self.cmp_observ_ev(observ_id)
+        if cmp_observ_dict == None: return None
+
         is_car_parked = True if cmp_observ_dict['is_car_parked'] == 1 else 0
         detection_components_dict : DetectAlgoRes = {
             "reader_id": cmp_observ_dict['reader_id'],

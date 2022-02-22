@@ -83,6 +83,8 @@ virtualEnvironDir="${rootDir}/${virtualEnvironName}"
 pythonVersion=3.9
 pipLocation="" # make global
 pythonLocation="" # global (changed based on OS)
+mysql_user="capstone_deploy_user"
+mysql_user_host="'${mysql_user}'@'localhost'"
 environDir=/etc/sysconfig
 environFile="${environDir}/${proj_name}_server_deploy_env"
 serviceName="${proj_name}_server_deploy"
@@ -163,6 +165,11 @@ if [[ ${modify_db} = true ]]; then
         mysql -e "create database if not exists ${proj_name};"
         # copy from dev database (which was just updated) to deploy db
         mysqldump --triggers --routines "${proj_name}_dev" | mysql "${proj_name}"
+
+        echo "#3.3 Granting Database Permissions to capstone User"
+        mysql -e "GRANT ALL PRIVILEGES ON ${proj_name}.* TO ${USER}@localhost;"
+        mysql -e "GRANT ALL PRIVILEGES ON ${proj_name}_dev.* TO ${USER}@localhost;"
+
     fi
 fi
 
@@ -173,9 +180,7 @@ if [[ ${deployServices} = true ]]; then
         symbols=("!" "-" "*" "+" "@" "#" "%" "^" ".")
         s1=${symbols[ RANDOM % ${#symbols[@]} ]}
         mysql_rand_pwd=$(date +%s | sha256sum | base64 | head -c 32 ; echo)${s1}${2}
-        mysql_user="capstone_db_deploy"
         useradd "${mysql_user}"
-        mysql_user_host="'${mysql_user}'@'localhost'"
         mysql -e "DROP USER IF EXISTS ${mysql_user_host}"
         mysql -e "CREATE USER ${mysql_user_host} IDENTIFIED BY '${mysql_rand_pwd}'"
         mysql -e "GRANT ALL PRIVILEGES ON ${proj_name}.* TO ${mysql_user_host};"

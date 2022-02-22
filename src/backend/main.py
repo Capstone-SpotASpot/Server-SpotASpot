@@ -135,9 +135,8 @@ class WebApp(UserManager):
                 # run algorithm to see if a detection was made
                 detect_res = self.run_detect_algo(observation_id)
                 # print(f"detect_res={detect_res}")
-
                 # make sure return doesnt have Nones in it
-                if(detect_res['is_car_parked'] is True):
+                if(detect_res != None and detect_res['is_car_parked'] is True):
                     detect_car_spot_dict = self.add_detection_and_park_car(
                         detect_res['reader_id'], detect_res['observation1_id'],
                         detect_res['observation2_id'], detect_res['observation3_id']
