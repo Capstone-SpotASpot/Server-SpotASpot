@@ -51,11 +51,9 @@ while [[ "$#" -gt 0 ]]; do
             ;;
         -p | --python-packages )
             upgradePkgs=true
-            break
             ;;
         -d | --modify-db )
             modify_db=true
-            break
             ;;
         -s | --deploy-services )
             deployServices=true
