@@ -33,4 +33,5 @@ fi
 
 
 echo "Starting Program ${executePath}"
-"${venvPath}" "${executePath}" $ARGS
+# use -u to run python unbuffered (service wont print to syslog otherwise)
+"${venvPath}" -u "${executePath}" $ARGS
