@@ -46,19 +46,19 @@ class MobileAppDBManager():
             self.cursor.execute("call is_spot_taken(%s)", reader_id)
             # form:  [{spot_id, longitude, latitude, status}]
             raw_status_dict = self.cursor.fetchall()
-            print(raw_status_dict)
 
             # Transform dict to match return expected
             status_dict = {}
             for row in raw_status_dict:
-                status_dict[row['spot_id']] = {
-                    'status': row['status'],
-                    'longitude': row['longitude'],
+                status_dict[int(row['spot_id'])] = {
+                    'status': row['spot_status'],
                     'latitude': row['latitude'],
+                    'longitude': row['longitude'],
                 }
 
             return status_dict
-        except:
+        except Exception as err:
+            print(f"is_spot_taken error: {err}")
             return None
 
     def calc_coord_dist(self, lat1: float, long1: float, lat2: float, long2: float) -> float:
