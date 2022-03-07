@@ -23,26 +23,40 @@ class DB_Manager(ReaderDBManager, MobileAppDBManager, DetectionAlgo):
             \n@param: host  - The IP/localhost of the database to connect with
             \nNote: This class defines all functions not specific to the Reader or Mobile App
         """
+        self._host = host
+        self._user = user
+        self._pwd = pwd
+        self._db = db
         try:
-            self.conn = pymysql.connect(
-                host=host,
-                user=user,
-                password=pwd,
-                db=db,
-                charset="utf8mb4",
-                cursorclass=pymysql.cursors.DictCursor
-            )
-            self.cursor = self.conn.cursor()
+            self.connect_db()
         except Exception as err:
             raise SystemExit(f"Invalid Database Login: {err}")
 
-        ReaderDBManager.__init__(self, self.conn, self.cursor)
-        MobileAppDBManager.__init__(self, self.conn, self.cursor)
-        DetectionAlgo.__init__(self, self.conn, self.cursor)
+        ReaderDBManager.__init__(self, self.conn, self.cursor, self.check_conn)
+        MobileAppDBManager.__init__(self, self.conn, self.cursor, self.check_conn)
+        DetectionAlgo.__init__(self, self.conn, self.cursor, self.check_conn)
+
+    def connect_db(self):
+        """Creates self.conn & self.cursor objects"""
+        self.conn = pymysql.connect(
+            host=self._host,
+            user=self._user,
+            password=self._pwd,
+            db=self._db,
+            charset="utf8mb4",
+            cursorclass=pymysql.cursors.DictCursor
+        )
+        self.cursor = self.conn.cursor()
 
     def cleanup(self):
         self.cursor.close()
         self.conn.close()
+
+    def check_conn(self):
+        """Decorator to check if need to reconnect to db & does so if needed"""
+        # check if youre connected, if not, connect again
+        self.conn.ping(reconnect=True)
+        self.cursor = self.conn.cursor()
 
     def updatePwd(self):
         "WIP"
@@ -55,6 +69,7 @@ class DB_Manager(ReaderDBManager, MobileAppDBManager, DetectionAlgo):
             This can be obtained via the compass app on a phone, google maps, etc...
             while standing near the reader in the direction it faces
         \n:return the added reader's id if added successfully. -1 if error."""
+        self.check_conn()
         try:
             self.cursor.execute("call add_reader(%s, %s, %s, %s)",
                                 (latitude, longitude, reader_range, reader_front_bearing))
@@ -70,6 +85,7 @@ class DB_Manager(ReaderDBManager, MobileAppDBManager, DetectionAlgo):
         Returns:
             int: The id of the newly created tag (-1 if error)
         """
+        self.check_conn()
         try:
             self.cursor.execute("call add_tag()")
             # ignore name of field and just get the value

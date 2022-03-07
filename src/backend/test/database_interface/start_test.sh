@@ -1,6 +1,5 @@
 #!/bin/bash
 # this script enables user to run the code in this repo using the virtual environment
-# CREDIT: Nick Rizzo's Personal Project: https://github.com/NRizzoInc/texting-and-emailing-agent/blob/develop/start.sh
 
 # Get paths to everything
 virtualEnvironName="SpotASpot-venv"

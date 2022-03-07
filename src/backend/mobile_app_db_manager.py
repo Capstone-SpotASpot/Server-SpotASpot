@@ -15,16 +15,18 @@ from pymysql.cursors import Cursor
 #--------------------------------Project Includes--------------------------------#
 
 class MobileAppDBManager():
-    def __init__(self, conn: pymysql.Connection, cursor: Cursor) -> None:
+    def __init__(self, conn: pymysql.Connection, cursor: Cursor, db_start_cb) -> None:
         """
             @brief: Used to implement all database management for the Mobile App to get info.
         """
         self.conn = conn
         self.cursor = cursor
+        self.db_start_cb = db_start_cb
 
     def add_user(self, first_name, last_name, username, pwd)-> bool:
         """Function to add a user
         \n:Return: True if add success, False otherwise """
+        self.db_start_cb()
         try:
             self.cursor.execute("call add_user(%s, %s, %s, %s)",
                                 (first_name, last_name, username, pwd))
@@ -42,6 +44,7 @@ class MobileAppDBManager():
             \n\t {<spot_id>: {'status': <status>, ...}}
         """
         # TODO: maybe change this to spot id and not reader_id??
+        self.db_start_cb()
         try:
             self.cursor.execute("call is_spot_taken(%s)", reader_id)
             # form:  [{spot_id, longitude, latitude, status}]
@@ -62,6 +65,7 @@ class MobileAppDBManager():
             return None
 
     def calc_coord_dist(self, lat1: float, long1: float, lat2: float, long2: float) -> float:
+        self.db_start_cb()
         try:
             self.cursor.execute("select calc_coord_dist(%s, %s, %s, %s)",
                                 (lat1, long1,
@@ -73,6 +77,7 @@ class MobileAppDBManager():
 
     def get_readers_in_radius(self, center_latitude: float, center_longitude: float, radius: float) -> Optional[List[Dict]]:
         """Given a set of coordinates, finds all readers with a given GPS distance (radius) from that point """
+        self.db_start_cb()
         try:
             pass
             self.cursor.execute("call get_readers_in_radius(%s, %s, %s)",
@@ -94,6 +99,7 @@ class MobileAppDBManager():
         """Add a user's car to the database giventheir car's 3 tags & their id
         Returns: The created car's id (-1 if error)
         """
+        self.db_start_cb()
         try:
             self.cursor.execute("call add_car(%s, %s, %s, %s)",
                 (user_id, tag_id_front, tag_id_middle, tag_id_rear))

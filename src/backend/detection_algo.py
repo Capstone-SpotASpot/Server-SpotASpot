@@ -21,15 +21,19 @@ class DetectAlgoRes(TypedDict):
     car_id: int
 
 class DetectionAlgo():
-    def __init__(self, conn: pymysql.Connection, cursor: Cursor) -> None:
+    def __init__(self, conn: pymysql.Connection, cursor: Cursor, db_start_cb) -> None:
         """
             @brief: Used to implement the algo to detect if a car was detected.
+            @args
+                db_start_cb - function to call prior to any db actions
         """
         self.conn = conn
         self.cursor = cursor
+        self.db_start_cb = db_start_cb
 
     def cmp_observ_ev(self, observ_id):
         """:return reader_id, car_id, is_car_parked, observation_id"""
+        self.db_start_cb()
         try:
             self.cursor.execute("call cmp_observ_ev(%s)", (observ_id))
             cmp_observ_res = list(self.cursor.fetchall())[0]
@@ -43,6 +47,7 @@ class DetectionAlgo():
 
     def get_observ_id_from_parked_car(self, car_id_in: int) -> Optional[List[Dict]]:
         """:return a 2-3 row dict containing <tag_id, observ_id> that resulted in the algo calling this car parked"""
+        self.db_start_cb()
         try:
             self.cursor.execute("call get_observ_id_from_parked_car(%s)", (car_id_in))
             raw_ids = self.cursor.fetchall()
@@ -60,7 +65,7 @@ class DetectionAlgo():
         # "is this tag on a car that is ALREADY parked in this spot"
         # IF yes -> update detection to include this new observation
         #   OR can ignore this observation and NOT start a new potential detection / mark this reading as irrelevant
-
+        self.db_start_cb()
 
         # get ( reader_id, car_id, is_car_parked, observation_id)
         cmp_observ_dict = self.cmp_observ_ev(observ_id)
@@ -91,5 +96,6 @@ class DetectionAlgo():
         return detection_components_dict
 
     def reader_cleanup(self):
+        self.db_start_cb()
         self.cursor.close()
         self.conn.close()

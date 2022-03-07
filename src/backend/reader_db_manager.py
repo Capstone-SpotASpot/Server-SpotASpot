@@ -12,12 +12,13 @@ from pymysql import connections, cursors
 from pymysql.cursors import Cursor
 
 class ReaderDBManager():
-    def __init__(self, conn: pymysql.Connection, cursor: Cursor) -> None:
+    def __init__(self, conn: pymysql.Connection, cursor: Cursor, db_start_cb) -> None:
         """
             @brief: Used to implement all database management for the reader's specifically.
         """
         self.conn = conn
         self.cursor = cursor
+        self.db_start_cb = db_start_cb
 
     def add_observation_event(self,
                             observation_time: str,
@@ -31,6 +32,7 @@ class ReaderDBManager():
         \n    signal_strength (float):
         \nReturns: The observation id (-1 if error)
         """
+        self.db_start_cb()
         try:
             self.cursor.execute("call add_observation(%s, %s, %s, %s)",
                                 (observation_time, signal_strength,
@@ -48,6 +50,7 @@ class ReaderDBManager():
                       observation2_id,
                       observation3_id) -> Optional[Dict]:
         """Dict keys: created_detect_id, parked_car_id, parked_spot_id"""
+        self.db_start_cb()
         try:
             self.cursor.execute("call add_detection_and_park_car(%s, %s, %s, %s)",
                                 (reader_id, observation1_id,
@@ -63,5 +66,6 @@ class ReaderDBManager():
             return None
 
     def reader_cleanup(self):
+        self.db_start_cb()
         self.cursor.close()
         self.conn.close()
