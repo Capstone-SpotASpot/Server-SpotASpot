@@ -90,17 +90,25 @@ class WebApp(UserManager):
 
     def createReaderPostRoutes(self):
         """All routes for receiving information from the reader's"""
-        @self._app.route("/reader/add_reader", methods=["POST"])
-        def add_new_reader():
+        @self._app.route("/reader/add_reader", methods=["POST"], defaults={'lat': None, 'long':None, 'range':None, 'bearing': None})
+        @self._app.route("/reader/add_reader?lat=<lat>&long=<long>&range=<range>&bearing=<bearing>", methods=["POST"])
+        def add_new_reader(lat, long, range, bearing):
             """Add a new reader given latitude, longitude, reader_range, reader_front_bearing"""
             args = request.args
-            lat = args.get("latitude")
-            long = args.get("longitude")
-            range = args.get("reader_range")
-            reader_front_bearing = args.get("reader_bearing")
-            new_reader_id = self.add_reader(lat, long, range, reader_front_bearing)
+
+            lat = args.get("lat")
+            long = args.get("long")
+            range = args.get("range")
+            reader_front_bearing = args.get("bearing")
+
+            # dont add reader if bad data
+            if lat == None or long == None or range == None or reader_front_bearing == None:
+                new_reader_id = -1
+            else:
+                new_reader_id = self.add_reader(lat, long, range, reader_front_bearing)
+
             return {
-                "new_reader_added": new_reader_id != None
+                "new_reader_added": new_reader_id
             }
 
         @self._app.route("/reader/get_spot_coord/<int:spot_id>", methods=["GET"])
@@ -109,8 +117,6 @@ class WebApp(UserManager):
             return self.get_coord_from_spot_id(spot_id)
 
         @self._app.route("/reader/send_event_data", defaults={'reader_id': -1, 'tag_id': -1, 'signal_strength': -1}, methods=["POST"])
-        @self._app.route("/reader/send_event_data/<int:reader_id>/<int:tag_id>/", defaults={'signal_strength': -1}, methods=["POST"])
-        @self._app.route("/reader/send_event_data/<int:reader_id>/<int:tag_id>/<float:signal_strength>", methods=["POST"])
         @self._app.route("/reader/send_event_data?reader_id=<reader_id>&tag_id=<tag_id>&signal_strength=<signal_strength>", methods=["POST"])
         def reader_send_event_data(reader_id, tag_id, signal_strength) -> SendEventDataRes:
             """
@@ -186,8 +192,6 @@ class WebApp(UserManager):
             return flask.jsonify(self.is_spot_taken(reader_id))
 
         @self._app.route("/mobile/get_local_readers", methods=["GET"], defaults={'radius': None, 'latitude': None, 'longitude': None})
-        @self._app.route("/mobile/get_local_readers/<float:radius>/", methods=["GET"], defaults={'latitude': None, 'longitude': None})
-        @self._app.route("/mobile/get_local_readers/<float:radius>/<float:latitude>/", methods=["GET"], defaults={'longitude': None})
         @self._app.route("/mobile/get_local_readers?radius=<radius>&latitude=<latitude>&longitude=<longitude>", methods=["GET"])
         def get_local_readers(radius: float, latitude: float, longitude: float):
             args = request.args

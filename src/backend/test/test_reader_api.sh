@@ -61,6 +61,13 @@ else
 fi
 echo "Testing against URL $url"
 
+# $1 cmd to run
+function run_test() {
+    echo "$1 ..."
+    $1
+    echo "" # newline
+}
+
 echo "TEST 1 - Adding a reader"
 # reader further down the street compared to the 2 inserted already
-curl -X POST $url'/reader/add_reader?latitude=42.341143&longitude=-71.090956&reader_range=15&reader_bearing=289'
+run_test "curl -X POST $url/reader/add_reader?lat=42.341143&long=-71.090956&range=15&bearing=289"
