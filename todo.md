@@ -1,7 +1,6 @@
 # TODO for this repo
 
 ## MISC TODO:
-* have add_tag api return the tag's id
 * add the template / code to login as a user
 
 ## Implementation TODO's
