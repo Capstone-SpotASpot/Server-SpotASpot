@@ -5,6 +5,12 @@ Authors:
   - Aman Kaur - kaur.am@northeastern.edu
   - Annie Waye - waye.a@northeastern.edu
   - Liz Woodwell - woodwell.e@northeastern.edu
+  - Tyler Royere - royere.t@northeastern.edu
+
+## Server Web Application APIs
+
+see [api.md](./docs/api.md) for routes to interact with web-app database interface
+
 
 ## Creating and Running the Project
 * libraries - see [install/requirements.txt](install/requirements.txt)

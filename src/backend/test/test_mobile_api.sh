@@ -69,9 +69,9 @@ function run_test() {
 
 echo -n "Test 1 - Get coords of some spots"
 # /reader/get_spot_coord/<int:spot_id>
-run_test "curl $url/reader/get_spot_coord/1"
-run_test "curl $url/reader/get_spot_coord/2"
-run_test "curl $url/reader/get_spot_coord/3"
+run_test "curl $url/mobile/get_spot_coord/1"
+run_test "curl $url/mobile/get_spot_coord/2"
+run_test "curl $url/mobile/get_spot_coord/3"
 
 echo -n "TEST 2 - Getting the meters within the radius. "
 echo "For now the readers are at: (42.340989, -71.091054), (42.341061, -71.091008)"

@@ -670,6 +670,7 @@ CREATE PROCEDURE is_spot_taken(
             ON readers.reader_id = reader_coverage.covering_reader_id
         LEFT JOIN parking_spot
             ON reader_coverage.spot_covered_id = parking_spot.spot_id;
+      -- TODO: FIX DOESNT USE PASSED VALUE AT ALL
 
   COMMIT;
 END $$
