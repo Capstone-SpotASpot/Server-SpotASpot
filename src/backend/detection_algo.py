@@ -71,10 +71,11 @@ class DetectionAlgo():
         cmp_observ_dict = self.cmp_observ_ev(observ_id)
         if cmp_observ_dict == None: return None
 
+        # true if db sees >=2 of the car's tags in the same spot
         is_car_parked = True if cmp_observ_dict['is_car_parked'] == 1 else 0
         detection_components_dict : DetectAlgoRes = {
             "reader_id": cmp_observ_dict['reader_id'],
-            "observation1_id": None,
+            "observation1_id": observ_id,
             "observation2_id": None,
             "observation3_id": None,
             "is_car_parked": is_car_parked,

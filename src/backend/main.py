@@ -115,7 +115,7 @@ class WebApp(UserManager):
             """
             # Receive + Store data from reader
             args = request.args
-            is_valid_arg    = lambda x: x != None and (x != -1 and x != 1.0)
+            is_valid_arg    = lambda x: x != None and (x != -1 and x != -1.0)
             sanitize_choice = lambda x, y: x if is_valid_arg(x) else (y if is_valid_arg(y) else -1)
             reader_id       = int(sanitize_choice(reader_id, args.get('reader_id')))
             tag_id          = int(sanitize_choice(tag_id, args.get('tag_id')))
@@ -147,23 +147,27 @@ class WebApp(UserManager):
 
             # run algorithm to see if a detection was made
             detect_res = self.run_detect_algo(observation_id)
-            car_id = -1
+            # provide scope for vars and default to already known values
+            car_id = detect_res['car_id'] if detect_res else -1
             detect_id = -1
             spot_id = -1
-            # make sure return doesnt have Nones in it
+
+            # fill in rest of return json if car completely detected and have all the info
             if(detect_res != None and detect_res['is_car_parked'] is True):
+                # car is detected as parked so mark in db
                 detect_car_spot_dict = self.add_detection_and_park_car(
                     detect_res['reader_id'], detect_res['observation1_id'],
                     detect_res['observation2_id'], detect_res['observation3_id']
                 )
+
                 if (detect_car_spot_dict != None):
                     car_id = detect_car_spot_dict['parked_car_id']
                     detect_id = detect_car_spot_dict['created_detect_id']
                     spot_id = detect_car_spot_dict['parked_spot_id']
 
             return {
-                "is_car_parked": detect_res['is_car_parked'] if detect_res else False,
-                "car_detected": car_id,
+                "is_car_parked": bool(detect_res['is_car_parked']) if detect_res else False,
+                "car_id": car_id,
                 "detection_id": detect_id,
                 "parked_spot_id": spot_id
             }

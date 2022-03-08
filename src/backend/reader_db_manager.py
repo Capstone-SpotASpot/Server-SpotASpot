@@ -60,8 +60,8 @@ class ReaderDBManager():
         self.db_start_cb()
         try:
             self.cursor.execute("call add_detection_and_park_car(%s, %s, %s, %s)",
-                                (reader_id, observation1_id,
-                                 observation2_id, observation3_id))
+                (reader_id, observation1_id, observation2_id, observation3_id))
+
             # should only return 1 row of info & not have {'Level': "Error"}
             detect_car_spot_dict = list(self.cursor.fetchall())[0]
             if 'Level' in detect_car_spot_dict and detect_car_spot_dict['Level'] == "Error":
