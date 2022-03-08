@@ -104,7 +104,7 @@ class WebApp(UserManager):
             apis: TypedDict[str, Tuple[str, List[str] ] ] = {
                 "reader":   ("is-warning", []),
                 "mobile":   ("is-primary", []),
-                "tags":     ("is-success", []),
+                "cars":     ("is-success", []),
                 "api":     ("is-info", []),
                 "user":     ("is-danger", []), # for rn, skip user pages as not used
             }
@@ -113,9 +113,9 @@ class WebApp(UserManager):
             for rule in routes:
                 if "/reader" in rule:   apis["reader"][1].append(rule)
                 elif "/mobile" in rule: apis["mobile"][1].append(rule)
-                elif "/tags" in rule:   apis["tags"][1].append(rule)
-                elif "/user" in rule:   apis["user"][1].append(rule)
+                elif "/cars" in rule:   apis["cars"][1].append(rule)
                 elif "/api" in rule:    apis["api"][1].append(rule)
+                elif "/user" in rule:   apis["user"][1].append(rule)
             return render_template("api.html", title="SpotASpot APIs", apis=apis)
 
     def createReaderPostRoutes(self):
