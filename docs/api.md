@@ -62,11 +62,14 @@ To see what some of the data will look like, try running the tests found in
   - should be used in conjunction with `get_local_readers` to check all readers in a certain radius to fit on screen
 - `reader_id`: The reader's spot to check if taken
 - `returns`: Given a reader_id, returns the status of the spots it can reach.
-  - {spot_id: `<is_spot_taken>`, ...}
+  - {spot_id: `<is_spot_taken>`, latitude: `<latitude>`, longitude: `<longitude>`, parked_car: `<parked_car>`}
   - `is_spot_taken`: is a boolean
     - `True`: spot taken
     - `False`: spot not taken
     - `None`: some other state (i.e. an unregistered car is parked there)
+  - `<latitude>` & `<longitude>` are the float values
+  - `<parked_car>` Is the id (according to the database) of the car that is parked there
+    - `null` if nothing is parked there
 
 ### get_spot_coord
 

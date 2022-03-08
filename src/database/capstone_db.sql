@@ -656,20 +656,25 @@ CREATE PROCEDURE is_spot_taken(
   END;
   START TRANSACTION; -- may need to rollback bc multiple inserts
     -- Get the spot's that the reader covers through coverage table
+    WITH get_covered_spots as (
+      SELECT spot_covered_id
+        FROM reader_coverage
+        WHERE reader_id_in = covering_reader_id
+    )
+
     SELECT  parking_spot.spot_id as spot_id,
             parking_spot.longitude as longitude,
             parking_spot.latitude as latitude,
+            parked_car_id,
         -- spot is free = 0, taken = 1
-        CASE parked_car_id
-            WHEN NULL THEN 0
-            WHEN NOT NULL THEN 1
+        (CASE
+            WHEN parked_car_id is NULL THEN 0
+            WHEN parked_car_id is NOT NULL THEN 1
             ELSE -1
-        END as spot_status
-        FROM readers
-        JOIN reader_coverage
-            ON readers.reader_id = reader_coverage.covering_reader_id
+        END) as spot_status
+        FROM get_covered_spots
         LEFT JOIN parking_spot
-            ON reader_coverage.spot_covered_id = parking_spot.spot_id;
+            ON get_covered_spots.spot_covered_id = parking_spot.spot_id;
       -- TODO: FIX DOESNT USE PASSED VALUE AT ALL
 
   COMMIT;
