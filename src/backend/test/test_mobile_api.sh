@@ -60,32 +60,46 @@ else
     url="http://71.167.9.86:${port}"
 fi
 
+# $1 cmd to run
+function run_test() {
+    echo "$1 ..."
+    $1
+    echo "" # newline
+}
 
-echo -n "TEST 1 - Getting the meters within the radius. "
+echo -n "Test 1 - Get coords of some spots"
+# /reader/get_spot_coord/<int:spot_id>
+run_test "curl $url/reader/get_spot_coord/1"
+run_test "curl $url/reader/get_spot_coord/2"
+run_test "curl $url/reader/get_spot_coord/3"
+
+echo -n "TEST 2 - Getting the meters within the radius. "
 echo "For now the readers are at: (42.340989, -71.091054), (42.341061, -71.091008)"
 # make its center be the same as a reader
-echo "TEST 1.1.1 - Test center MATCHING a reader"
-curl $url'/mobile/get_local_readers?latitude=42.340989&longitude=-71.091054&radius=15'
+echo "TEST 2.1.1 - Test center MATCHING a reader"
+run_test "curl $url/mobile/get_local_readers?latitude=42.340989&longitude=-71.091054&radius=15"
 
-echo ""
-echo "TEST 1.1.1 - Test center being NEAR a reader"
-curl $url'/mobile/get_local_readers?latitude=42.340960&longitude=-71.0910540&radius=15'
+echo "TEST 2.1.2 - Test center being NEAR a reader"
+run_test "curl $url/mobile/get_local_readers?latitude=42.340960&longitude=-71.0910540&radius=15"
+
+echo "TEST 2.1.3 - Test getting ALL readers with large radius"
+run_test "curl $url/mobile/get_local_readers?latitude=42.340989&longitude=-71.091054&radius=100"
 
 # echo ""
-# echo "TEST 1.2.1 - Test Getting the meters within the radius but not giving the radius (should error)"
+# echo "TEST 2.2.1 - Test Getting the meters within the radius but not giving the radius (should error)"
 # curl $url'/mobile/get_local_readers?latitude=42.340989&longitude=-71.091054'
 
 # echo ""
-# echo "TEST 1.2.1 - Test Getting the meters within the radius but not giving the lat (should error)"
+# echo "TEST 2.2.1 - Test Getting the meters within the radius but not giving the lat (should error)"
 # curl $url'/mobile/get_local_readers?radius=20&longitude=-71.091054'
 
 # echo ""
-# echo "TEST 1.2.1 - Test Getting the meters within the radius but not giving the long (should error)"
+# echo "TEST 2.2.1 - Test Getting the meters within the radius but not giving the long (should error)"
 # curl $url'/mobile/get_local_readers?latitude=42.340989&radius=20'
 
 
 # echo ""
-# echo -n "TEST 2 - Given Reader ID, RETURN its status."
+# echo -n "TEST 3 - Given Reader ID, RETURN its status."
 # echo "Only available readers are reader 0 = free, reader 1 = taken."
 # echo "Testing reader 0...expect a return of False because it is free"
 # curl $url'/mobile/get_is_spot_taken/0'

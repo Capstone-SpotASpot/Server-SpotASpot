@@ -848,6 +848,25 @@ END $$
 -- resets the DELIMETER
 DELIMITER ;
 
+
+DROP PROCEDURE IF EXISTS get_coord_from_spot_id;
+DELIMITER $$
+-- adds two readers as adjacent to one another in database
+-- given: reader_ids for both
+-- returns: created adjacency id
+CREATE PROCEDURE get_coord_from_spot_id(
+  IN spot_id_in INT
+) BEGIN
+
+  select latitude, longitude
+  from parking_spot
+  where spot_id = spot_id_in;
+
+END $$
+-- resets the DELIMETER
+DELIMITER ;
+
+
 -- ###### End of Procedures ######
 
 -- ##### Add one set of rows #####

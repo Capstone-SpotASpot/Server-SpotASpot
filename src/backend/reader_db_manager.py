@@ -22,6 +22,23 @@ class ReaderDBManager():
         self.cursor = cursor
         self.db_start_cb = db_start_cb
 
+    def get_coord_from_spot_id(self, spot_id: int) -> Dict[str, float]:
+        """:returns {latitude: float, longitude: float}"""
+        self.db_start_cb()
+        try:
+            self.cursor.execute("call get_coord_from_spot_id(%s)", (spot_id))
+
+            coord_res = list(self.cursor.fetchall())[0]
+            if 'Level' in coord_res and observ_res['Level'] == "Error":
+                print(f"mysql add_observation_event() err: {coord_res}")
+                return -1
+
+            # dict of two elements (lat & long) and can just return
+            return coord_res
+        except Exception as err:
+            print(f"add_observation_event() error: {err})")
+            return -1
+
     def add_observation_event(self,
                             observation_time: str,
                             signal_strength: float,
