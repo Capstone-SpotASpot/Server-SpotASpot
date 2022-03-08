@@ -114,7 +114,7 @@ To see what some of the data will look like, try running the tests found in
 
 ### Adding a New Tag
 
-`http://71.167.9.86:31025/tags/add_tag`
+`http://71.167.9.86:31025/cars/add_tag`
 - adds a tag to the database (not associated with any car yet)
 - `returns`: {"new_tag_id": `int`}
   - the id of the new tag
