@@ -17,17 +17,43 @@
         <div class="hero-head">
             <nav class="navbar is-fixed-top has-background-grey-light" role="navigation" aria-label="main navigation">
                 <div class="navbar-brand">
-                    <a class="navbar-item" href="{{ url_for('index') }}">
+                    <a class="navbar-item" href="{{ url_for('api') }}">
                       <img src="../static/images/api.png">
                     </a>
 
                     <!-- on mobile or page too small -->
-                    <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navbarBasicExample">
+                    <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navbarSetup">
                         <span aria-hidden="true"></span>
                         <span aria-hidden="true"></span>
                         <span aria-hidden="true"></span>
                     </a>
                 </div>
+
+                <!-- left side of navbar-->
+                <div id="navbarSetup" class="navbar-menu">
+                    <div class="navbar-start">
+                        <div class="navbar-item">
+                            <div class="buttons">
+                                <a href="{{ url_for('api') }}" class="button is-primary">
+                                    API URLs
+                                </a>
+                            </div>
+                        </div>
+                        <div class="navbar-item">
+                            <div class="buttons">
+                                <a href="{{ url_for('api_md') }}" class="button is-link">
+                                    API Docs
+                                </a>
+                            </div>
+                        </div>
+                    </div> <!-- End of left navbar-->
+
+
+                    <!-- right side of navbar-->
+                    <div class="navbar-end">
+                    </div>
+                </div> <!-- close out navbar-->
+            </nav>
         </div>
         <div class="hero-body">
             <div class="container has-text-centered">
@@ -35,4 +61,5 @@
             </div>
         </div>
     </div>
+</body>
 </html>

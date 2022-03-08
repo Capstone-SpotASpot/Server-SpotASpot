@@ -120,6 +120,11 @@ class WebApp(UserManager):
 
             return render_template("api.html", title="SpotASpot APIs", apis=apis)
 
+        @self._app.route("/api/info.md", methods=["GET"])
+        def api_md():
+            return render_template("api.md.html", title="API Info")
+
+
     def createReaderPostRoutes(self):
         """All routes for receiving information from the reader's"""
         @self._app.route("/reader/add_reader", methods=["POST"], defaults={'lat': None, 'long':None, 'range':None, 'bearing': None})
