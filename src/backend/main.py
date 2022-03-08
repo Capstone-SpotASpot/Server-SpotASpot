@@ -99,7 +99,7 @@ class WebApp(UserManager):
         @self._app.route("/api/info")
         def api():
             """Provides a list of all the possibe api's"""
-            routes:List[str] = self.flask_helper.get_links(False)
+            routes:List[str] = self.flask_helper.get_links(include_domain=False)
             # dict of {rule type: (box-color, [route_&_methods, ...]), other_rule_types...}
             apis: TypedDict[str, Tuple[str, List[str] ] ] = {
                 "reader":   ("is-warning", []),
@@ -116,6 +116,8 @@ class WebApp(UserManager):
                 elif "/cars" in rule:   apis["cars"][1].append(rule)
                 elif "/api" in rule:    apis["api"][1].append(rule)
                 elif "/user" in rule:   apis["user"][1].append(rule)
+
+
             return render_template("api.html", title="SpotASpot APIs", apis=apis)
 
     def createReaderPostRoutes(self):
