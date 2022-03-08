@@ -103,12 +103,16 @@ class WebApp(UserManager):
                 "new_reader_added": new_reader_id != None
             }
 
-        @self._app.route("/reader/send_event_data",
-                        methods=["POST"],
-                        defaults={'reader_id': -1, 'tag_id': -1, 'signal_strength': -1})
-        def reader_send_event_data( reader_id: int,
-                                    tag_id: int,
-                                    signal_strength: float) -> SendEventDataRes:
+        @self._app.route("/reader/get_spot_coord/<int:spot_id>", methods=["GET"])
+        def get_coord_from_spot_id(spot_id: int):
+            """:returns {latitude: float, longitude: float}"""
+            return self.get_coord_from_spot_id(spot_id)
+
+        @self._app.route("/reader/send_event_data", defaults={'reader_id': -1, 'tag_id': -1, 'signal_strength': -1}, methods=["POST"])
+        @self._app.route("/reader/send_event_data/<int:reader_id>/<int:tag_id>/", defaults={'signal_strength': -1}, methods=["POST"])
+        @self._app.route("/reader/send_event_data/<int:reader_id>/<int:tag_id>/<float:signal_strength>", methods=["POST"])
+        @self._app.route("/reader/send_event_data?reader_id=<reader_id>&tag_id=<tag_id>&signal_strength=<signal_strength>", methods=["POST"])
+        def reader_send_event_data(reader_id, tag_id, signal_strength) -> SendEventDataRes:
             """
             \n:brief Stores the event in the correct database table and ensures the data is processed
             \nParams: reader_id, tag_id, and signal_stregth
@@ -116,39 +120,59 @@ class WebApp(UserManager):
             """
             # Receive + Store data from reader
             args = request.args
-            reader_id = args.get('reader_id')
-            tag_id = args.get('tag_id')
-            signal_strength = args.get('signal_strength') if 'signal_strength' in args else -1
+            is_valid_arg    = lambda x: x != None and (x != -1 and x != -1.0)
+            sanitize_choice = lambda x, y: x if is_valid_arg(x) else (y if is_valid_arg(y) else -1)
+            reader_id       = int(sanitize_choice(reader_id, args.get('reader_id')))
+            tag_id          = int(sanitize_choice(tag_id, args.get('tag_id')))
+            signal_strength = float(sanitize_choice(args.get('signal_strength'), -1.0))
+
+            # if any param is -1, dont run bc will error
+            invalid_ret = {
+                "is_car_parked": False,
+                "car_detected": None,
+                "detection_id": None,
+                "parked_spot_id": None
+            }
+            if not is_valid_arg(reader_id):
+                print(f"Invalid reader_send_event_data() reader_id={reader_id}")
+                return invalid_ret
+            elif not is_valid_arg(tag_id):
+                print(f"Invalid reader_send_event_data() tag_id={tag_id}")
+                return invalid_ret
+
             timestamp = datetime.now()
             readeable_timestamp = timestamp.strftime('%Y-%m-%d %H:%M:%S')
 
-            detect_id = None
-            spot_id = None
-            car_id = None
+            # try to add observation event to the db
+            observation_id = self.add_observation_event(readeable_timestamp, signal_strength, reader_id, tag_id)
+            if (observation_id == -1):
+                # skip detection if there was an error observing
+                print(f"Failed: add_observation_event({(readeable_timestamp, signal_strength, reader_id, tag_id)})")
+                return invalid_ret
 
-            observation_id = self.add_observation_event(
-                readeable_timestamp, signal_strength, reader_id, tag_id)
+            # run algorithm to see if a detection was made
+            detect_res = self.run_detect_algo(observation_id)
+            # provide scope for vars and default to already known values
+            car_id = detect_res['car_id'] if detect_res else -1
+            detect_id = -1
+            spot_id = -1
 
-            # skip detection if there was an error observing
-            detect_id = None
-            if (observation_id != -1):
-                # run algorithm to see if a detection was made
-                detect_res = self.run_detect_algo(observation_id)
-                # print(f"detect_res={detect_res}")
-                # make sure return doesnt have Nones in it
-                if(detect_res != None and detect_res['is_car_parked'] is True):
-                    detect_car_spot_dict = self.add_detection_and_park_car(
-                        detect_res['reader_id'], detect_res['observation1_id'],
-                        detect_res['observation2_id'], detect_res['observation3_id']
-                    )
-                    if (detect_car_spot_dict != None):
-                        detect_id = detect_car_spot_dict['created_detect_id']
-                        spot_id = detect_car_spot_dict['parked_spot_id']
-                        car_id = detect_car_spot_dict['parked_car_id']
+            # fill in rest of return json if car completely detected and have all the info
+            if(detect_res != None and detect_res['is_car_parked'] is True):
+                # car is detected as parked so mark in db
+                detect_car_spot_dict = self.add_detection_and_park_car(
+                    detect_res['reader_id'], detect_res['observation1_id'],
+                    detect_res['observation2_id'], detect_res['observation3_id']
+                )
+
+                if (detect_car_spot_dict != None):
+                    car_id = detect_car_spot_dict['parked_car_id']
+                    detect_id = detect_car_spot_dict['created_detect_id']
+                    spot_id = detect_car_spot_dict['parked_spot_id']
 
             return {
-                "is_car_parked": detect_res['is_car_parked'],
-                "car_detected": car_id,
+                "is_car_parked": bool(detect_res['is_car_parked']) if detect_res else False,
+                "car_id": car_id,
                 "detection_id": detect_id,
                 "parked_spot_id": spot_id
             }
@@ -161,9 +185,10 @@ class WebApp(UserManager):
             :return {<spot_id>: <status>, <spot_id>: <status>}"""
             return flask.jsonify(self.is_spot_taken(reader_id))
 
-        @self._app.route("/mobile/get_local_readers",
-                        methods=["GET"],
-                         defaults={'radius': None, 'latitude': None, 'longitude': None})
+        @self._app.route("/mobile/get_local_readers", methods=["GET"], defaults={'radius': None, 'latitude': None, 'longitude': None})
+        @self._app.route("/mobile/get_local_readers/<float:radius>/", methods=["GET"], defaults={'latitude': None, 'longitude': None})
+        @self._app.route("/mobile/get_local_readers/<float:radius>/<float:latitude>/", methods=["GET"], defaults={'longitude': None})
+        @self._app.route("/mobile/get_local_readers?radius=<radius>&latitude=<latitude>&longitude=<longitude>", methods=["GET"])
         def get_local_readers(radius: float, latitude: float, longitude: float):
             args = request.args
             try:

@@ -60,7 +60,25 @@ else
     url="http://71.167.9.86:${port}"
 fi
 
-echo "Testing a Reader Detecting a Tag..."
-curl -X POST $url'/reader/send_event_data?reader_id=2&tag_id=4'
-curl -X POST $url'/reader/send_event_data?reader_id=2&tag_id=5'
-curl -X POST $url'/reader/send_event_data?reader_id=2&tag_id=6'
+# $1 cmd to run
+function run_test() {
+    echo "$1 ..."
+    $1
+    echo "" # newline
+}
+
+# after second curl, should detect car2
+echo -e "Testing a Reader Detecting a Tag..."
+run_test "curl -X POST $url/reader/send_event_data?reader_id=2&tag_id=4"
+run_test "curl -X POST $url/reader/send_event_data?reader_id=2&tag_id=5"
+run_test "curl -X POST $url/reader/send_event_data?reader_id=2&tag_id=6"
+
+echo -e "\nTesting a NEW Reader Detecting a Tag in the same Location..."
+run_test "curl -X POST $url/reader/send_event_data?reader_id=1&tag_id=4"
+run_test "curl -X POST $url/reader/send_event_data?reader_id=1&tag_id=5"
+run_test "curl -X POST $url/reader/send_event_data?reader_id=1&tag_id=6"
+
+echo -e "\nTesting a NEW Reader Detecting a Tag in a DIFFERENT Location..."
+run_test "curl -X POST $url/reader/send_event_data?reader_id=3&tag_id=4"
+run_test "curl -X POST $url/reader/send_event_data?reader_id=3&tag_id=5"
+run_test "curl -X POST $url/reader/send_event_data?reader_id=3&tag_id=6"
