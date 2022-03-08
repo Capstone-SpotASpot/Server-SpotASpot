@@ -94,6 +94,39 @@ class DB_Manager(ReaderDBManager, MobileAppDBManager, DetectionAlgo):
             print(f"add_tag error: {err}")
             return -1
 
+    def add_car(self, user_id: int, front_tag: int, middle_tag: int, rear_tag: int) -> int:
+        """Creates a new database entry for a car and returns its unique id.
+
+        Returns:
+            int: The id of the newly created car (-1 if error)
+        """
+        self.check_conn()
+        try:
+            self.cursor.execute("call add_car(%s, %s, %s, %s)",
+                (user_id, front_tag, middle_tag, rear_tag))
+
+            # ignore name of field and just get the value
+            return list(self.cursor.fetchall()[0].values())[0]
+        except Exception as err:
+            print(f"add_car error: {err}")
+            return -1
+
+    def add_user(self, fname:str, lname:str, username:str, pwd:str) -> int:
+        """Creates a new database entry for a user and returns its unique id.
+
+        Returns:
+            int: The id of the newly created user (-1 if error)
+        """
+        self.check_conn()
+        try:
+            self.cursor.execute("call add_user(%s, %s, %s, %s)",
+                (fname, lname, username, pwd))
+
+            # ignore name of field and just get the value
+            return list(self.cursor.fetchall()[0].values())[0]
+        except Exception as err:
+            print(f"add_car error: {err}")
+            return -1
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Database Python Connector")

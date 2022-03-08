@@ -80,9 +80,9 @@ class WebApp(UserManager):
         """Wrapper around all url route generation"""
         self.createUserPages()
         self.createInfoRoutes()
-        self.createMobileGetRoutes()
+        self.createMobileRoutes()
         self.createReaderPostRoutes()
-        self.createTagRoutes()
+        self.createCarRoutes()
 
     def createInfoRoutes(self):
         """All routes for internal passing of information"""
@@ -92,7 +92,7 @@ class WebApp(UserManager):
         """All routes for receiving information from the reader's"""
         @self._app.route("/reader/add_reader", methods=["POST"], defaults={'lat': None, 'long':None, 'range':None, 'bearing': None})
         @self._app.route("/reader/add_reader?lat=<lat>&long=<long>&range=<range>&bearing=<bearing>", methods=["POST"])
-        def add_new_reader(lat, long, range, bearing):
+        def add_new_reader(lat: float, long: float, range: float, bearing: float):
             """Add a new reader given latitude, longitude, reader_range, reader_front_bearing"""
             args = request.args
 
@@ -110,11 +110,6 @@ class WebApp(UserManager):
             return {
                 "new_reader_added": new_reader_id
             }
-
-        @self._app.route("/reader/get_spot_coord/<int:spot_id>", methods=["GET"])
-        def get_coord_from_spot_id(spot_id: int):
-            """:returns {latitude: float, longitude: float}"""
-            return self.get_coord_from_spot_id(spot_id)
 
         @self._app.route("/reader/send_event_data", defaults={'reader_id': -1, 'tag_id': -1, 'signal_strength': -1}, methods=["POST"])
         @self._app.route("/reader/send_event_data?reader_id=<reader_id>&tag_id=<tag_id>&signal_strength=<signal_strength>", methods=["POST"])
@@ -183,8 +178,14 @@ class WebApp(UserManager):
                 "parked_spot_id": spot_id
             }
 
-    def createMobileGetRoutes(self):
-        """All routes for Get requests from the Mobile App"""
+    def createMobileRoutes(self):
+        """All routes requests from the Mobile App"""
+
+        @self._app.route("/mobile/get_spot_coord/<int:spot_id>", methods=["GET"])
+        def get_coord_from_spot_id(spot_id: int):
+            """:returns {latitude: float, longitude: float}"""
+            return self.get_coord_from_spot_id(spot_id)
+
         @self._app.route("/mobile/get_is_spot_taken/<int:reader_id>")
         def get_is_spot_taken(reader_id: int) -> bool:
             """Given a reader_id, returns the status of the spots it can reach.
@@ -254,28 +255,25 @@ class WebApp(UserManager):
             # # on error, keep trying to login until correct
             # return redirect(url_for("login"))
 
-        @self._app.route("/register", methods=["POST"])
-        def register():
-            # TODO: figure out how to do form/validation???
-            is_validated = True
-            if current_user.is_authenticated: return redirect(url_for('index'))
-            elif request.method == "POST" and is_validated:
-                # TODO: make a db_manager function for adding a user
-                add_res = self.addUser()
+        @self._app.route("/register", methods=["POST"],
+                         defaults={'fname': None, 'lname': None, 'username': None, 'pwd': None})
+        @self._app.route("/register?fname=<fname>&lname=<lname>&username=<username>&pwd=<pwd>", methods=["POST"])
+        def register(fname:str, lname:str, username:str, pwd:str):
+            args = request.args
+            fname = args.get("fname")
+            lname = args.get("lname")
+            username = args.get("username")
+            pwd = args.get("pwd")
 
-                if (add_res == -1):
-                    flash("Username already taken", "is-danger")
-                elif (add_res == 1):
-                    msg = "Congratulations, you are now a registered user!"
-                    flash(msg, " is-success")
-                elif (add_res == 0):
-                    flash('Registration Failed!', "is-danger")
+            # dont add reader if bad data
+            if fname == None or lname == None or username == None or pwd == None:
+                add_res = -1
+            else:
+                add_res = self.add_user(fname, lname, username, pwd)
+            return {
+                "new_user_id": add_res
+            }
 
-                # since form validated, always return to login
-                return redirect(url_for("login"))
-
-            elif request.method == "POST":
-                print("Registration Validation Failed")
 
         @self._app.route("/forgot-password", methods=["POST"])
         def forgotPassword():
@@ -299,11 +297,29 @@ class WebApp(UserManager):
             return redirect(url_for("login"))
 
 
-    def createTagRoutes(self):
-        @self._app.route("/tags/add_tag", methods=["GET"])
+    def createCarRoutes(self):
+        @self._app.route("/cars/add_tag", methods=["GET", "POST"])
         def add_tag():
             """Returns the newly created tag's id"""
             return {"new_tag_id": self.add_tag()}
+
+        @self._app.route("/cars/add_car", methods=["POST"], defaults={
+            'user_id': None, 'front_tag': None, 'middle_tag': None, 'rear_tag': None})
+        @self._app.route("/cars/add_car?user_id=<user_id>&front_tag=<front_tag>&middle_tag=<middle_tag>&rear_tag=<rear_tag>", methods=["POST"])
+        def add_car(user_id: int, front_tag: int, middle_tag: int, rear_tag: int):
+            args = request.args
+            user_id = args.get("user_id")
+            front_tag = args.get("front_tag")
+            middle_tag = args.get("middle_tag")
+            rear_tag = args.get("rear_tag")
+
+            # dont add reader if bad data
+            if user_id == None or front_tag == None or middle_tag == None or rear_tag == None:
+                new_car_id = -1
+            else:
+                new_car_id = self.add_car(user_id, front_tag, middle_tag, rear_tag)
+
+            return {"new_car_id": new_car_id}
 
 if __name__ == '__main__':
 
