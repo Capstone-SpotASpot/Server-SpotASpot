@@ -15,6 +15,8 @@ class ReaderDBManager():
     def __init__(self, conn: pymysql.Connection, cursor: Cursor, db_start_cb) -> None:
         """
             @brief: Used to implement all database management for the reader's specifically.
+            @args
+                db_start_cb - function to call prior to any db actions
         """
         self.conn = conn
         self.cursor = cursor
