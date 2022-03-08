@@ -1,8 +1,8 @@
 # TODO for this repo
 
-## Setup todo's
-
-* Actually set the `requirements.txt` right
+## MISC TODO:
+* have add_tag api return the tag's id
+* add the template / code to login as a user
 
 ## Implementation TODO's
 * **procedures / funnctions**

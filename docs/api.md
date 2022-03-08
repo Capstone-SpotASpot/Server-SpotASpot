@@ -74,6 +74,35 @@ To see what some of the data will look like, try running the tests found in
 
 ## Car/Tag/User APIs
 
+### Adding a New User / Registering
+
+`http://71.167.9.86:31025/register?fname=<fname>&lname=<lname>&username=<username>&pwd=<pwd>`
+
+- `fname:`: The first name of the user
+- `lname:`: The last name of the user
+- `username:`: The user's username
+- `pwd:`: Their password (will be hashed)
+
+
+### User Forgot Password
+
+`http://71.167.9.86:31025/forgot-password`
+
+- Still a work in progress
+- When done, using this route when logged in as a user will promt a traditional forgot password page
+
+### Adding a New Car
+
+`http://71.167.9.86:31025/cars/add_car?user_id=<user_id>&front_tag=<front_tag>&middle_tag=<middle_tag>&rear_tag=<rear_tag>`
+- Used to add a new car to the database
+- `user_id`: the id of the user according to the database
+  - (this info can be requested from the server using other API)
+- `front_tag`, `middle_tag`, `rear_tag` the id's of the 3 tags on the car (according to the database)
+- `returns`: {"new_car_id": `int`}
+  - The id of the new car
+
+### Adding a New Tag
+
 `http://71.167.9.86:31025/tags/add_tag`
 - adds a tag to the database (not associated with any car yet)
 
