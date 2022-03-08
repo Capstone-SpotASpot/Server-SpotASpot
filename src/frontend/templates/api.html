@@ -14,7 +14,7 @@
                 <div class="content">
                     <ul class=flashes>
                         {% for rule, req_type in routes_tup[1] %}
-                            <li class="has-text-left">{{ rule }} -- req_type = {{ req_type }}</li>
+                            <li class="has-text-left"><a>{{ rule }}</a> -- req_type = {{ req_type }}</li>
                         {% endfor %}
                     </ul>
                 </div>
