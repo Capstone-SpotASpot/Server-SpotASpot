@@ -138,31 +138,28 @@ class WebApp(UserManager):
             timestamp = datetime.now()
             readeable_timestamp = timestamp.strftime('%Y-%m-%d %H:%M:%S')
 
-            detect_id = None
-            spot_id = None
-            car_id = None
-            observation_id = self.add_observation_event(
-                readeable_timestamp, signal_strength, reader_id, tag_id)
-
-            # skip detection if there was an error observing
-            detect_id = None
-            detect_res = None
-            if (observation_id != -1):
-                # run algorithm to see if a detection was made
-                detect_res = self.run_detect_algo(observation_id)
-                # print(f"detect_res={detect_res}")
-                # make sure return doesnt have Nones in it
-                if(detect_res != None and detect_res['is_car_parked'] is True):
-                    detect_car_spot_dict = self.add_detection_and_park_car(
-                        detect_res['reader_id'], detect_res['observation1_id'],
-                        detect_res['observation2_id'], detect_res['observation3_id']
-                    )
-                    if (detect_car_spot_dict != None):
-                        detect_id = detect_car_spot_dict['created_detect_id']
-                        spot_id = detect_car_spot_dict['parked_spot_id']
-                        car_id = detect_car_spot_dict['parked_car_id']
-            else: # error in add_observation_event()
+            # try to add observation event to the db
+            observation_id = self.add_observation_event(readeable_timestamp, signal_strength, reader_id, tag_id)
+            if (observation_id == -1):
+                # skip detection if there was an error observing
                 print(f"Failed: add_observation_event({(readeable_timestamp, signal_strength, reader_id, tag_id)})")
+                return invalid_ret
+
+            # run algorithm to see if a detection was made
+            detect_res = self.run_detect_algo(observation_id)
+            car_id = -1
+            detect_id = -1
+            spot_id = -1
+            # make sure return doesnt have Nones in it
+            if(detect_res != None and detect_res['is_car_parked'] is True):
+                detect_car_spot_dict = self.add_detection_and_park_car(
+                    detect_res['reader_id'], detect_res['observation1_id'],
+                    detect_res['observation2_id'], detect_res['observation3_id']
+                )
+                if (detect_car_spot_dict != None):
+                    car_id = detect_car_spot_dict['parked_car_id']
+                    detect_id = detect_car_spot_dict['created_detect_id']
+                    spot_id = detect_car_spot_dict['parked_spot_id']
 
             return {
                 "is_car_parked": detect_res['is_car_parked'] if detect_res else False,
