@@ -53,10 +53,17 @@ class MobileAppDBManager():
             raw_status_dict = self.cursor.fetchall()
 
             # Transform dict to match return expected
+            # spot_status = 0 on not taken, 1 on taken, -1 on other
+            is_spot_taken = None
+            if row['spot_status'] == 0:
+                is_spot_taken = False
+            elif row['spot_status'] == 1:
+                is_spot_taken = True
+
             status_dict = {}
             for row in raw_status_dict:
                 status_dict[int(row['spot_id'])] = {
-                    'status': row['spot_status'],
+                    'status': is_spot_taken,
                     'latitude': row['latitude'],
                     'longitude': row['longitude'],
                 }
