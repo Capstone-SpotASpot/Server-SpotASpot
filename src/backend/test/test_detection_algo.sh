@@ -73,7 +73,12 @@ run_test "curl -X POST $url/reader/send_event_data?reader_id=2&tag_id=4"
 run_test "curl -X POST $url/reader/send_event_data?reader_id=2&tag_id=5"
 run_test "curl -X POST $url/reader/send_event_data?reader_id=2&tag_id=6"
 
-echo -e "\nTesting a Reader Detecting a Tag in a NEW Location..."
+echo -e "\nTesting a NEW Reader Detecting a Tag in the same Location..."
 run_test "curl -X POST $url/reader/send_event_data?reader_id=1&tag_id=4"
 run_test "curl -X POST $url/reader/send_event_data?reader_id=1&tag_id=5"
 run_test "curl -X POST $url/reader/send_event_data?reader_id=1&tag_id=6"
+
+echo -e "\nTesting a NEW Reader Detecting a Tag in a DIFFERENT Location..."
+run_test "curl -X POST $url/reader/send_event_data?reader_id=3&tag_id=4"
+run_test "curl -X POST $url/reader/send_event_data?reader_id=3&tag_id=5"
+run_test "curl -X POST $url/reader/send_event_data?reader_id=3&tag_id=6"
