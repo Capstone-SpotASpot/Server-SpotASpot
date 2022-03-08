@@ -13,8 +13,8 @@
                 <!-- <p class="subtitle"></p> -->
                 <div class="content">
                     <ul class=flashes>
-                        {% for rule, req_type in routes_tup[1] %}
-                            <li class="has-text-left"><a>{{ rule }}</a> -- req_type = {{ req_type }}</li>
+                        {% for rule_n_methods in routes_tup[1] %}
+                            <li class="has-text-left">{{ rule_n_methods }}</li>
                         {% endfor %}
                     </ul>
                 </div>

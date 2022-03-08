@@ -100,8 +100,8 @@ class WebApp(UserManager):
         def api():
             """Provides a list of all the possibe api's"""
             routes:List[str] = self.flask_helper.get_links(False)
-            # dict of rule type: [box-color, [(route, request-type), ...]]
-            apis: TypedDict[str, Tuple[str, List[Tuple[str, str]] ] ] = {
+            # dict of {rule type: (box-color, [route_&_methods, ...]), other_rule_types...}
+            apis: TypedDict[str, Tuple[str, List[str] ] ] = {
                 "reader":   ("is-warning", []),
                 "mobile":   ("is-primary", []),
                 "tags":     ("is-success", []),
@@ -111,11 +111,11 @@ class WebApp(UserManager):
 
             # classify each type of route w/ style for html
             for rule in routes:
-                if "/reader" in rule: apis["reader"][1].append((rule, "type"))
-                elif "/mobile" in rule: apis["mobile"][1].append((rule, "type"))
-                elif "/tags" in rule: apis["tags"][1].append((rule, "type"))
-                elif "/user" in rule: apis["user"][1].append((rule, "type"))
-                elif "/api" in rule: apis["api"][1].append((rule, "type"))
+                if "/reader" in rule:   apis["reader"][1].append(rule)
+                elif "/mobile" in rule: apis["mobile"][1].append(rule)
+                elif "/tags" in rule:   apis["tags"][1].append(rule)
+                elif "/user" in rule:   apis["user"][1].append(rule)
+                elif "/api" in rule:    apis["api"][1].append(rule)
             return render_template("api.html", title="SpotASpot APIs", apis=apis)
 
     def createReaderPostRoutes(self):
@@ -318,7 +318,7 @@ class WebApp(UserManager):
 
 
     def createCarRoutes(self):
-        @self._app.route("/cars/add_tag", methods=["GET", "POST"])
+        @self._app.route("/cars/add_tag", methods=["POST"])
         def add_tag():
             """Returns the newly created tag's id"""
             return {"new_tag_id": self.add_tag()}
