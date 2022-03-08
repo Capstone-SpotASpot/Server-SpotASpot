@@ -10,7 +10,7 @@ from pathlib import Path
 import secrets
 import getpass
 from datetime import  datetime
-from typing import TypedDict
+from typing import TypedDict, List, Tuple
 
 #-----------------------------3RD PARTY DEPENDENCIES-----------------------------#
 import flask
@@ -44,10 +44,16 @@ class WebApp(UserManager):
         UserManager.__init__(self, self._app, user, pwd, db, db_host)
         self.flask_helper = FlaskHelper(self._app, port)
 
-        # current dir
+        # flask dir paths
         backend_dir = Path(__file__).parent.resolve()
         src_dir = backend_dir.parent
+        frontend_dir = src_dir / 'frontend'
+        template_dir = frontend_dir / 'templates'
+        static_dir = frontend_dir / "static"
+        self._app.static_folder = str(static_dir)
+        self._app.template_folder = str(template_dir)
 
+        # logging
         self._logger = logging.getLogger("werkzeug")
 
         self._is_debug = is_debug
@@ -86,7 +92,31 @@ class WebApp(UserManager):
 
     def createInfoRoutes(self):
         """All routes for internal passing of information"""
-        pass
+        @self._app.route("/", methods=["GET"])
+        def index():
+            return redirect(url_for("api"))
+
+        @self._app.route("/api/info")
+        def api():
+            """Provides a list of all the possibe api's"""
+            routes:List[str] = self.flask_helper.get_links(False)
+            # dict of rule type: [box-color, [(route, request-type), ...]]
+            apis: TypedDict[str, Tuple[str, List[Tuple[str, str]] ] ] = {
+                "reader":   ("is-warning", []),
+                "mobile":   ("is-primary", []),
+                "tags":     ("is-success", []),
+                "api":     ("is-info", []),
+                "user":     ("is-danger", []), # for rn, skip user pages as not used
+            }
+
+            # classify each type of route w/ style for html
+            for rule in routes:
+                if "/reader" in rule: apis["reader"][1].append((rule, "type"))
+                elif "/mobile" in rule: apis["mobile"][1].append((rule, "type"))
+                elif "/tags" in rule: apis["tags"][1].append((rule, "type"))
+                elif "/user" in rule: apis["user"][1].append((rule, "type"))
+                elif "/api" in rule: apis["api"][1].append((rule, "type"))
+            return render_template("api.html", title="SpotASpot APIs", apis=apis)
 
     def createReaderPostRoutes(self):
         """All routes for receiving information from the reader's"""
@@ -216,7 +246,7 @@ class WebApp(UserManager):
 
     def createUserPages(self):
         # https://flask-login.readthedocs.io/en/latest/#login-example
-        @self._app.route("/login", methods=["GET", "POST"])
+        @self._app.route("/user/login", methods=["GET", "POST"])
         def login():
             # dont login if already logged in
             if current_user.is_authenticated:
@@ -244,20 +274,10 @@ class WebApp(UserManager):
                 # two seperate flashes for diff categories
                 flash("Successfully logged in!", "is-success")
 
-            # # route to original destination
-            # next = flask.request.args.get('next')
-            # isNextUrlBad = next == None or not is_safe_url(next, self._urls)
-            # if isNextUrlBad:
-            #     return redirect(url_for('index'))
-            # else:
-            #     return redirect(next)
 
-            # # on error, keep trying to login until correct
-            # return redirect(url_for("login"))
-
-        @self._app.route("/register", methods=["POST"],
+        @self._app.route("/user/register", methods=["POST"],
                          defaults={'fname': None, 'lname': None, 'username': None, 'pwd': None})
-        @self._app.route("/register?fname=<fname>&lname=<lname>&username=<username>&pwd=<pwd>", methods=["POST"])
+        @self._app.route("/user/register?fname=<fname>&lname=<lname>&username=<username>&pwd=<pwd>", methods=["POST"])
         def register(fname:str, lname:str, username:str, pwd:str):
             args = request.args
             fname = args.get("fname")
@@ -275,7 +295,7 @@ class WebApp(UserManager):
             }
 
 
-        @self._app.route("/forgot-password", methods=["POST"])
+        @self._app.route("/user/forgot-password", methods=["POST"])
         def forgotPassword():
             #TODO: make this actually validate
             is_validated = True
@@ -289,7 +309,7 @@ class WebApp(UserManager):
             elif request.method == "POST":
                 flash("Password Reset Failed", "is-danger")
 
-        @self._app.route("/logout", methods=["GET", "POST"])
+        @self._app.route("/user/logout", methods=["GET", "POST"])
         @login_required
         def logout():
             logout_user()

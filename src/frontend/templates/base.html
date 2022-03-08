@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" href="../static/images/api.png">
+    <title>{{ title }}</title>
+
+    <link rel="stylesheet" href="../static/css/bulma.min.css" />
+    <link rel="stylesheet" href="../static/css/common.css" />
+
+    <script src="../static/js/extern/jquery-3.5.1.min.js"></script>
+    <script src="../static/js/navbar.js"></script>
+</head>
+<body class="has-navbar-fixed-top" style="background-color:white;">
+    <div class="hero is-fullheight">
+        <div class="hero-head">
+            <nav class="navbar is-fixed-top has-background-grey-light" role="navigation" aria-label="main navigation">
+                <div class="navbar-brand">
+                    <a class="navbar-item" href="{{ url_for('index') }}">
+                      <img src="../static/images/api.png">
+                    </a>
+
+                    <!-- on mobile or page too small -->
+                    <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navbarBasicExample">
+                        <span aria-hidden="true"></span>
+                        <span aria-hidden="true"></span>
+                        <span aria-hidden="true"></span>
+                    </a>
+                </div>
+        </div>
+        <div class="hero-body">
+            <div class="container has-text-centered">
+                {% block content %}{% endblock %}
+            </div>
+        </div>
+    </div>
+</html>

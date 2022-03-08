@@ -11,11 +11,12 @@ class FlaskHelper():
         arguments = rule.arguments if rule.arguments is not None else ()
         return len(defaults) >= len(arguments)
 
-    def get_links(self) -> list:
-        """Returns list of GET endpoints"""
+    def get_links(self, include_domain:bool=True) -> list:
+        """Returns list of all endpoints"""
         links = []
+        pre_rule=f"http://localhost:{self.port}" if include_domain else ""
         for rule in self.app.url_map.iter_rules():
-            url = f"http://localhost:{self.port}{rule}"
+            url = f"{pre_rule}{rule}"
             links.append(url)
         links.sort()
         return links

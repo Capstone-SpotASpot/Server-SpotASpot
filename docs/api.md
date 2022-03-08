@@ -87,7 +87,7 @@ To see what some of the data will look like, try running the tests found in
 
 ### Adding a New User / Registering
 
-`http://71.167.9.86:31025/register?fname=<fname>&lname=<lname>&username=<username>&pwd=<pwd>`
+`http://71.167.9.86:31025/user/register?fname=<fname>&lname=<lname>&username=<username>&pwd=<pwd>`
 
 - `fname:`: The first name of the user
 - `lname:`: The last name of the user
@@ -97,7 +97,7 @@ To see what some of the data will look like, try running the tests found in
 
 ### User Forgot Password
 
-`http://71.167.9.86:31025/forgot-password`
+`http://71.167.9.86:31025/user/forgot-password`
 
 - Still a work in progress
 - When done, using this route when logged in as a user will promt a traditional forgot password page
