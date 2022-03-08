@@ -7,11 +7,11 @@ To see what some of the data will look like, try running the tests found in
 
 ### send_event_data
 
-`http://localhost:31025/reader/send_event_data?reader_id=<reader_id>&tag_id=<tag_id>`
+`http://71.167.9.86:31025/reader/send_event_data?reader_id=<reader_id>&tag_id=<tag_id>`
 
 OR... if signal_strength is included (note, right now this does not affect anything at all)
 
-`http://localhost:31025/reader/send_event_data?reader_id=<reader_id>&tag_id=<tag_id>&signal_strength=<signal_strength>`
+`http://71.167.9.86:31025/reader/send_event_data?reader_id=<reader_id>&tag_id=<tag_id>&signal_strength=<signal_strength>`
 
 
 - Probably the most important route for readers. Use this route to send observation data to the server
@@ -31,7 +31,7 @@ To see the results for yourself, try running the tests found in
 
 ### add_reader
 
-`http://localhost:31025/reader/add_reader?lat=<lat>&long=<long>&range=<range>&bearing=<bearing>`
+`http://71.167.9.86:31025/reader/add_reader?lat=<lat>&long=<long>&range=<range>&bearing=<bearing>`
 - Use this route to add a reader
 - `lat` & `long`: (float) Coordinates = (lat, long)
   - can look this up on google maps and click on a point to get the lat,long
@@ -48,7 +48,7 @@ To see what some of the data will look like, try running the tests found in
 
 ### get_local_readers
 
-`http://localhost:31025/mobile/get_local_readers?radius=<radius>&latitude=<latitude>&longitude=<longitude>`
+`http://71.167.9.86:31025/mobile/get_local_readers?radius=<radius>&latitude=<latitude>&longitude=<longitude>`
 - Returns a list with every readers's id & coordinates in an area
 - `latitude` & `longitude`: (float) Coordinates = (lat, long)
   - can look this up on google maps and click on a point to get the lat,long
@@ -57,7 +57,7 @@ To see what some of the data will look like, try running the tests found in
 
 ### get_is_spot_taken
 
-`http://localhost:31025/mobile/get_is_spot_taken/<int:reader_id>`
+`http://71.167.9.86:31025/mobile/get_is_spot_taken/<int:reader_id>`
 - Tells querrier if the spot associated with the passed reader_id is taken
   - should be used in conjunction with `get_local_readers` to check all readers in a certain radius to fit on screen
 - `reader_id`: The reader's spot to check if taken
@@ -67,13 +67,13 @@ To see what some of the data will look like, try running the tests found in
 
 ### get_spot_coord
 
-`http://localhost:31025/mobile/get_spot_coord/<int:spot_id>`
+`http://71.167.9.86:31025/mobile/get_spot_coord/<int:spot_id>`
 - Gets the coordiantes of a spot/reader based on it's id
 - `spot_id`: (int) id of the reader who's spot you want to get the coordinates for
 - `returns`: {"latitude": `float`,"longitude": `float`}
 
 ## Car/Tag/User APIs
 
-`http://localhost:31025/tags/add_tag`
+`http://71.167.9.86:31025/tags/add_tag`
 - adds a tag to the database (not associated with any car yet)
 
