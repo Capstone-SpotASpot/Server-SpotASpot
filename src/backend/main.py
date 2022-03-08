@@ -103,12 +103,11 @@ class WebApp(UserManager):
                 "new_reader_added": new_reader_id != None
             }
 
-        @self._app.route("/reader/send_event_data",
-                        methods=["POST"],
-                        defaults={'reader_id': -1, 'tag_id': -1, 'signal_strength': -1})
-        def reader_send_event_data( reader_id: int,
-                                    tag_id: int,
-                                    signal_strength: float) -> SendEventDataRes:
+        @self._app.route("/reader/send_event_data", defaults={'reader_id': -1, 'tag_id': -1, 'signal_strength': -1}, methods=["POST"])
+        @self._app.route("/reader/send_event_data/<int:reader_id>/<int:tag_id>/", defaults={'signal_strength': -1}, methods=["POST"])
+        @self._app.route("/reader/send_event_data/<int:reader_id>/<int:tag_id>/<float:signal_strength>", methods=["POST"])
+        @self._app.route("/reader/send_event_data?reader_id=<reader_id>&tag_id=<tag_id>&signal_strength=<signal_strength>", methods=["POST"])
+        def reader_send_event_data(reader_id, tag_id, signal_strength) -> SendEventDataRes:
             """
             \n:brief Stores the event in the correct database table and ensures the data is processed
             \nParams: reader_id, tag_id, and signal_stregth
@@ -116,21 +115,38 @@ class WebApp(UserManager):
             """
             # Receive + Store data from reader
             args = request.args
-            reader_id = args.get('reader_id')
-            tag_id = args.get('tag_id')
-            signal_strength = args.get('signal_strength') if 'signal_strength' in args else -1
+            is_valid_arg    = lambda x: x != None and (x != -1 and x != 1.0)
+            sanitize_choice = lambda x, y: x if is_valid_arg(x) else (y if is_valid_arg(y) else -1)
+            reader_id       = int(sanitize_choice(reader_id, args.get('reader_id')))
+            tag_id          = int(sanitize_choice(tag_id, args.get('tag_id')))
+            signal_strength = float(sanitize_choice(args.get('signal_strength'), -1.0))
+
+            # if any param is -1, dont run bc will error
+            invalid_ret = {
+                "is_car_parked": False,
+                "car_detected": None,
+                "detection_id": None,
+                "parked_spot_id": None
+            }
+            if not is_valid_arg(reader_id):
+                print(f"Invalid reader_send_event_data() reader_id={reader_id}")
+                return invalid_ret
+            elif not is_valid_arg(tag_id):
+                print(f"Invalid reader_send_event_data() tag_id={tag_id}")
+                return invalid_ret
+
             timestamp = datetime.now()
             readeable_timestamp = timestamp.strftime('%Y-%m-%d %H:%M:%S')
 
             detect_id = None
             spot_id = None
             car_id = None
-
             observation_id = self.add_observation_event(
                 readeable_timestamp, signal_strength, reader_id, tag_id)
 
             # skip detection if there was an error observing
             detect_id = None
+            detect_res = None
             if (observation_id != -1):
                 # run algorithm to see if a detection was made
                 detect_res = self.run_detect_algo(observation_id)
@@ -145,9 +161,11 @@ class WebApp(UserManager):
                         detect_id = detect_car_spot_dict['created_detect_id']
                         spot_id = detect_car_spot_dict['parked_spot_id']
                         car_id = detect_car_spot_dict['parked_car_id']
+            else: # error in add_observation_event()
+                print(f"Failed: add_observation_event({(readeable_timestamp, signal_strength, reader_id, tag_id)})")
 
             return {
-                "is_car_parked": detect_res['is_car_parked'],
+                "is_car_parked": detect_res['is_car_parked'] if detect_res else False,
                 "car_detected": car_id,
                 "detection_id": detect_id,
                 "parked_spot_id": spot_id

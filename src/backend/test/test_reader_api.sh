@@ -59,9 +59,19 @@ else
 # TEST ON remote server
     url="http://71.167.9.86:${port}"
 fi
-
+echo "Testing against URL $url"
 
 echo "TEST 1 - Adding a reader"
 # reader further down the street compared to the 2 inserted already
 curl -X POST $url'/reader/add_reader?latitude=42.341143&longitude=-71.090956&reader_range=15&reader_bearing=289'
 
+echo "Test 2 - Sending Event Data:"
+# after second curl, should detect car2
+echo "$url/reader/send_event_data?reader_id=2&tag_id=4"
+curl -X POST "$url/reader/send_event_data?reader_id=2&tag_id=4"
+
+echo "$url/reader/send_event_data?reader_id=2&tag_id=5"
+curl -X POST "$url/reader/send_event_data?reader_id=2&tag_id=5"
+
+echo "$url/reader/send_event_data?reader_id=2&tag_id=6"
+curl -X POST "$url/reader/send_event_data?reader_id=2&tag_id=6"

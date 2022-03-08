@@ -35,15 +35,20 @@ class ReaderDBManager():
         \nReturns: The observation id (-1 if error)
         """
         self.db_start_cb()
+        observ_id = -1
         try:
             self.cursor.execute("call add_observation(%s, %s, %s, %s)",
-                                (observation_time, signal_strength,
-                                reader_id, tag_id ))
-            observ_res = self.cursor.fetchall()
-            raw_id = list(list(observ_res)[0].values())[0]
-            return int(raw_id)
+                (observation_time, signal_strength, reader_id, tag_id))
+
+            observ_res = list(self.cursor.fetchall())[0]
+            if 'Level' in observ_res and observ_res['Level'] == "Error":
+                print(f"mysql add_observation_event() err: {observ_res}")
+                return -1
+            # dict of one element & only care about value
+            observ_id = list(observ_res.values())[0]
+            return int(observ_id)
         except Exception as err:
-            print(f"add_observation_event() error: {err}")
+            print(f"add_observation_event() error: {err} (observ_id={observ_id})")
             return -1
 
     def add_detection_and_park_car(self,
