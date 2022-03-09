@@ -85,6 +85,9 @@ To see what some of the data will look like, try running the tests found in
 
 ## Car/Tag/User APIs
 
+To test everything is running correctly, run the tests found in
+[test_user_car_tag_api.sh](../src/backend/test/test_user_car_tag_api.sh) using the command `bash src/backend/test/test_user_car_tag_api.sh -r`.
+
 ### Adding a New User / Signup
 
 `http://71.167.9.86:31025/user/signup?fname=<fname>&lname=<lname>&username=<username>&password=<password>&password2=<password2>`

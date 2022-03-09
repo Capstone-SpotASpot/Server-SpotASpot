@@ -134,4 +134,4 @@ dmypy.json
 
 # test
 src/database/test/
-src/backend/test/login_cookie
+src/backend/test/*cookie*
