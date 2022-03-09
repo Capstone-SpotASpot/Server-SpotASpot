@@ -72,7 +72,7 @@ echo "TEST 1 - Adding User (this will fail if user already added in another test
 run_test "curl -X POST $url/user/signup?fname=test_fname&lname=test_lname&username=test_username&password=test_pwd&password2=test_pwd --output /dev/null"
 
 # echo "TEST 2 - Changing User Password"
-# run_test "curl -X POST $url/user/forgot_password?uname=test_username&new_pwd=reset_pwd"
+run_test "curl -X POST $url/user/forgot_password?uname=test_username&new_pwd=reset_pwd --output /dev/null"
 
 # echo "TEST 3 - Logging in with User (using reset password)"
 # run_test "curl -X POST $url/user/login?username=test_username&pwd=reset_pwd"

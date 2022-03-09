@@ -358,28 +358,37 @@ class WebApp(UserManager):
             return render_template('registration.html', title="SpotASpot Signup", form=form)
 
 
-        @self._app.route("/user/forgot_password", methods=["GET", "POST"], defaults={'uname': None, 'pwd': None})
+        @self._app.route("/user/forgot_password", methods=["GET", "POST"], defaults={'uname': None, 'new_pwd': None})
         @self._app.route("/user/forgot_password?uname=<uname>&new_pwd=<new_pwd>", methods=["GET", "POST"])
-        def forgotPassword(uname: str, pwd: str):
+        def forgotPassword(uname: str, new_pwd: str):
+            is_form = len(request.form) > 0
             form = ForgotPwdForm(self._app, user_manager=self)
+            update_res = True
 
-            if request.method == "POST" and form.validate_on_submit():
-                # TODO: make sure posting with normal method (not via form) still works
-                # args = request.args
-                # uname = args.get("uname")
-                # pwd = args.get("pwd")
-                # chang_pwd_suc = False
+            if request.method == "POST":
+                if is_form and form.validate_on_submit():
+                    uname = form.username.data
+                    new_pwd = form.new_password.data
+                elif is_form:
+                    # flash_print(f"Password Reset Fail! Bad form", "is-warning")
+                    uname = new_pwd = None
+                else:
+                    # make sure posting with normal method (not via form) still works
+                    args = request.args
+                    uname = args.get("uname")
+                    new_pwd = args.get("new_pwd")
 
-                # actually change a user's login given info is valid/allowed
-                self.update_pwd(form.username.data, form.new_password.data)
-                flash("Password Reset Successful", "is-success")
-                return redirect(url_for('index'))
-            elif request.method == "POST":
+                if uname != None and new_pwd != None:
+                    update_res = self.update_pwd(uname, new_pwd)
+
+                    if update_res == 1:
+                        flash("Password Reset Successful", "is-success")
+                        return redirect(url_for('index'))
+                print(f"Password Reset Failed: {uname} w/ {new_pwd}")
                 flash("Password Reset Failed", "is-danger")
 
             # on GET or failure, reload
             return render_template("forgot_password.html", title="SpotASpot Reset Password", form=form)
-            # return {'ret': chang_pwd_suc}
 
         @self._app.route("/user/logout", methods=["GET", "POST"])
         @login_required
