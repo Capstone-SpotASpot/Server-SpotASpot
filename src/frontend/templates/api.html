@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+<!doctype html>
+<html>
+{% block body %}
+<body class="has-background-white">
+{% endblock %}
+
+{% block content %}
+    <!-- look into converting this into tabs -->
+
+    {% for route_type, routes_tup in apis.items() %}
+        <div class="tile is-parent">
+            <article class="tile is-child notification {{ routes_tup[0] }}">
+                <p class="title">{{ route_type }}</p>
+                <!-- <p class="subtitle"></p> -->
+                <div class="content">
+                    <ul class=flashes>
+                        {% for rule_n_methods in routes_tup[1] %}
+                            <li class="has-text-left">{{ rule_n_methods }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </article>
+
+            </ul>
+        </div>
+    {% endfor %}
+
+</body>
+{% endblock %}
+
+</html>

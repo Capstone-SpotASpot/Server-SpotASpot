@@ -290,6 +290,19 @@ END $$
 -- resets the DELIMETER
 DELIMITER ;
 
+DELIMITER $$
+CREATE FUNCTION get_user_id(username_p VARCHAR(50))
+ RETURNS INT
+ DETERMINISTIC
+ READS SQL DATA
+BEGIN
+    DECLARE found_user_id INT;
+    SELECT user_id INTO found_user_id FROM users WHERE (username = username_p) LIMIT 1;
+    RETURN (found_user_id);
+END $$
+-- resets the DELIMETER
+DELIMITER ;
+
 
 -- ###### End of Functions ######
 
@@ -872,6 +885,45 @@ END $$
 -- resets the DELIMETER
 DELIMITER ;
 
+-- Given a username, returns true (1) if username is not currently used
+-- false (0) if not used
+DELIMITER $$
+CREATE PROCEDURE does_username_exist(IN username_p VARCHAR(50))
+BEGIN
+   SELECT EXISTS(SELECT username FROM users WHERE (username = username_p)) AS username_exists;
+END $$
+-- resets the DELIMETER
+DELIMITER ;
+
+
+DELIMITER $$
+CREATE PROCEDURE update_pwd(IN username_p VARCHAR(50), IN pwd_p VARCHAR(50))
+BEGIN
+ UPDATE users
+ SET user_password = MD5(pwd_p)
+ WHERE username = username_p;
+END $$
+-- resets the DELIMETER
+DELIMITER ;
+
+-- password is stored in MD5 hash so have to hash given password to check against db
+DELIMITER $$
+CREATE PROCEDURE check_password(IN username_to_test VARCHAR(50), IN pwd VARCHAR(50))
+BEGIN
+  -- insert into @hash_pwd exec get_user_pass username;
+  -- SELECT lib_password FROM lib_user WHERE (username = username_p);
+  DECLARE is_pwd_match BOOLEAN;
+  DECLARE hashed_pwd VARCHAR(50);
+
+  SET hashed_pwd = (
+    SELECT user_password FROM users WHERE (username = username_to_test)
+  );
+
+  SET is_pwd_match = hashed_pwd = MD5(pwd);
+  SELECT is_pwd_match;
+END $$
+-- resets the DELIMETER
+DELIMITER ;
 
 -- ###### End of Procedures ######
 

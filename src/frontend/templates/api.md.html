@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+<!DOCTYPE html>
+<html>
+
+{% block head %}
+<head>
+    <link rel="icon" href="../static/images/api.png">
+    <!-- Library Includes -->
+    <!-- Lightweight client-side loader used for markdown loading -->
+    <script src="../static/js/extern/webcomponents-loader-2.5.0.min.js"></script>
+    <!-- Allows new tag type for reading markdown -->
+    <script type="module" src="../static/js/extern/zero-md-1.4.2.min.js"></script>
+</head>
+{% endblock %}
+
+
+{% block body %}
+<body class="has-background-white">
+{% endblock %}
+    {% block content %}
+        <zero-md class="has-text-left" id="api-md" src="../static/md/api.md"></zero-md>
+</body>
+{% endblock %}
+
+
+</html>

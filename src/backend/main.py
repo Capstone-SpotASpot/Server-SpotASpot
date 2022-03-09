@@ -10,7 +10,7 @@ from pathlib import Path
 import secrets
 import getpass
 from datetime import  datetime
-from typing import TypedDict
+from typing import TypedDict, List, Tuple
 
 #-----------------------------3RD PARTY DEPENDENCIES-----------------------------#
 import flask
@@ -26,7 +26,10 @@ from flask_login import login_user, current_user, login_required, logout_user
 from user import User
 from userManager import UserManager
 from db_manager import DB_Manager
-from flask_helpers import FlaskHelper
+from flask_helpers import FlaskHelper, flash_print
+from registrationForm import RegistrationForm
+from loginForm import LoginForm
+from forgotPasswordForm import ForgotPwdForm
 
 class SendEventDataRes(TypedDict):
     is_car_parked: bool
@@ -44,10 +47,16 @@ class WebApp(UserManager):
         UserManager.__init__(self, self._app, user, pwd, db, db_host)
         self.flask_helper = FlaskHelper(self._app, port)
 
-        # current dir
+        # flask dir paths
         backend_dir = Path(__file__).parent.resolve()
         src_dir = backend_dir.parent
+        frontend_dir = src_dir / 'frontend'
+        template_dir = frontend_dir / 'templates'
+        static_dir = frontend_dir / "static"
+        self._app.static_folder = str(static_dir)
+        self._app.template_folder = str(template_dir)
 
+        # logging
         self._logger = logging.getLogger("werkzeug")
 
         self._is_debug = is_debug
@@ -86,7 +95,39 @@ class WebApp(UserManager):
 
     def createInfoRoutes(self):
         """All routes for internal passing of information"""
-        pass
+        @self._app.route("/", methods=["GET"])
+        @self._app.route("/index", methods=["GET"])
+        def index():
+            return redirect(url_for("api"))
+
+        @self._app.route("/api/info")
+        def api():
+            """Provides a list of all the possibe api's"""
+            routes:List[str] = self.flask_helper.get_links(include_domain=False)
+            # dict of {rule type: (box-color, [route_&_methods, ...]), other_rule_types...}
+            apis: TypedDict[str, Tuple[str, List[str] ] ] = {
+                "reader":   ("is-link", []),
+                "mobile":   ("is-primary", []),
+                "cars":     ("is-success", []),
+                "api":     ("is-info", []),
+                "user":     ("is-danger", []), # for rn, skip user pages as not used
+            }
+
+            # classify each type of route w/ style for html
+            for rule in routes:
+                if "/reader" in rule:   apis["reader"][1].append(rule)
+                elif "/mobile" in rule: apis["mobile"][1].append(rule)
+                elif "/cars" in rule:   apis["cars"][1].append(rule)
+                elif "/api" in rule:    apis["api"][1].append(rule)
+                elif "/user" in rule:   apis["user"][1].append(rule)
+
+
+            return render_template("api.html", title="SpotASpot APIs", apis=apis)
+
+        @self._app.route("/api/info.md", methods=["GET"])
+        def api_md():
+            return render_template("api.md.html", title="API Info")
+
 
     def createReaderPostRoutes(self):
         """All routes for receiving information from the reader's"""
@@ -216,80 +257,156 @@ class WebApp(UserManager):
 
     def createUserPages(self):
         # https://flask-login.readthedocs.io/en/latest/#login-example
-        @self._app.route("/login", methods=["GET", "POST"])
-        def login():
+        @self._app.route("/user/login", methods=["GET", "POST"], defaults={'username': None, 'pwd': None})
+        @self._app.route("/user/login?username=<username>&pwd=<pwd>", methods=["GET", "POST"])
+        def login(username: str, pwd: str):
             # dont login if already logged in
-            if current_user.is_authenticated:
-                return redirect(url_for('index'))
+            if current_user.is_authenticated: return redirect(url_for('index'))
 
-            # TODO: how to validate this way?? -> call functions based on the data??
-            is_validated = True
+            is_form = len(request.form) > 0
+            # to provide UserManager, use self which is a child of it
+            form = LoginForm(self._app, self)
 
+            def login_fail(msg=""):
+                flash_print(f'Invalid Username or Password!', "is-danger")
+                return redirect(url_for('login'))
+
+            username = None
+            pwd = None
+            rememberMe = None
             if request.method == "GET":
-                return render_template('login.html', title="SpotASpot Login")
-            elif request.method == "POST" and not is_validated:
-                # unsuccessful login
-                flash("Invalid Username or Password!", "is-danger")
-                return render_template('login.html', title="SpotASpot Login")
-
+                return render_template("login.html", title="SpotASpot Login", form=form)
             elif request.method == "POST":
-                # username & pwd must be right at this point, so login
-                # https://flask-login.readthedocs.io/en/latest/#flask_login.LoginManager.user_loader
-                # call loadUser() / @user_loader in userManager.py
-                # TODO: Get user id from database??
-                user_id = 1
-                user = User(user_id)
-                login_user(user)
+                if is_form and form.validate_on_submit():
+                    username = form.username.data
+                    pwd = form.password.data
+                    rememberMe = form.rememberMe.data
+                elif is_form:
+                    # unsuccessful login
+                    return login_fail()
+                else:
+                    # make sure posting with normal method (not via form) still works
+                    args = request.args
+                    username = args.get("username")
+                    pwd = args.get("pwd")
+                    rememberMe = False
 
-                # two seperate flashes for diff categories
-                flash("Successfully logged in!", "is-success")
+                    # verify valid login
+                    if(not self.check_password(username, pwd)):
+                        # unsuccessful login
+                        return login_fail()
 
-            # # route to original destination
-            # next = flask.request.args.get('next')
-            # isNextUrlBad = next == None or not is_safe_url(next, self._urls)
-            # if isNextUrlBad:
-            #     return redirect(url_for('index'))
-            # else:
-            #     return redirect(next)
+            # username & pwd must be right at this point, so login
+            # https://flask-login.readthedocs.io/en/latest/#flask_login.LoginManager.user_loader
+            # call loadUser() / @user_loader in userManager.py
+            user_id = self.get_user_id(username)
+            user = User(user_id)
+            login_user(user, remember=rememberMe)
 
-            # # on error, keep trying to login until correct
-            # return redirect(url_for("login"))
+            # flash messages for login
+            flash_print("Login Successful!", "is-success")
+            flash_print(f"user id: {user_id}", "is-info") # format str safe bc not user input
 
-        @self._app.route("/register", methods=["POST"],
-                         defaults={'fname': None, 'lname': None, 'username': None, 'pwd': None})
-        @self._app.route("/register?fname=<fname>&lname=<lname>&username=<username>&pwd=<pwd>", methods=["POST"])
-        def register(fname:str, lname:str, username:str, pwd:str):
-            args = request.args
-            fname = args.get("fname")
-            lname = args.get("lname")
-            username = args.get("username")
-            pwd = args.get("pwd")
-
-            # dont add reader if bad data
-            if fname == None or lname == None or username == None or pwd == None:
-                add_res = -1
-            else:
-                add_res = self.add_user(fname, lname, username, pwd)
-            return {
-                "new_user_id": add_res
-            }
-
-
-        @self._app.route("/forgot-password", methods=["POST"])
-        def forgotPassword():
-            #TODO: make this actually validate
-            is_validated = True
-            # TODO: get actual data to check who is doing forget password
-
-            if request.method == "POST" and is_validated:
-                # actually change a user's login given info is valid/allowed
-                self.updatePwd()
-                flash("Password Reset Successful", "is-success")
+            # route to original destination
+            next = flask.request.args.get('next')
+            isNextUrlBad = next == None or not is_safe_url(next, self._urls)
+            if isNextUrlBad:
                 return redirect(url_for('index'))
+            else:
+                return redirect(next)
+
+            # on error, keep trying to login until correct
+            return redirect(url_for("login"))
+
+
+
+        @self._app.route("/user/get_id", methods=["GET"])
+        @login_required
+        def get_user_id():
+            return {'user_id': current_user.id}
+
+
+        @self._app.route("/user/signup", methods=["GET", "POST"],
+                         defaults={'fname': None, 'lname': None, 'username': None, 'password': None, 'password2': None})
+        @self._app.route("/user/signup?fname=<fname>&lname=<lname>&username=<username>&password=<password>&password2=<password2>", methods=["GET", "POST"])
+        def signup(fname:str, lname:str, username:str, password:str, password2: str):
+            if current_user.is_authenticated: return redirect(url_for('index'))
+
+            is_form = len(request.form) > 0
+            form = RegistrationForm(self._app, user_manager=self)
+
+            def signup_fail(msg=""):
+                flash_print(f'Signup Failed! {msg}', "is-danger")
+                # try again
+                return redirect(url_for("signup"))
+            def signup_succ(username, msg=""):
+                # since validated, always return to login
+                flash_print(f"Signup successful for {username}! {msg}", "is-success")
+                return redirect(url_for("login"))
+
+            if request.method == "POST":
+                if is_form and form.validate_on_submit():
+                    fname = form.fname.data
+                    lname = form.lname.data
+                    username = form.username.data
+                    pwd = form.password.data
+                elif is_form:
+                    return signup_fail()
+                else:
+                    # make sure posting with normal method (not via form) still works
+                    args = request.args
+                    fname = args.get("fname")
+                    lname = args.get("lname")
+                    username = args.get("username")
+                    pwd = args.get("password")
+                    pwd2 = args.get("password2")
+
+                add_res = self.add_user(fname, lname, username, pwd)
+                if(add_res != -1):
+                    return signup_succ(username)
+                else:
+                    return signup_fail(msg="failed to add user to db")
+
             elif request.method == "POST":
+                print("Signup Validation Failed")
+
+            # on GET or failure, reload
+            return render_template('signup.html', title="SpotASpot Signup", form=form)
+
+
+        @self._app.route("/user/forgot_password", methods=["GET", "POST"], defaults={'uname': None, 'new_pwd': None})
+        @self._app.route("/user/forgot_password?uname=<uname>&new_pwd=<new_pwd>", methods=["GET", "POST"])
+        def forgotPassword(uname: str, new_pwd: str):
+            is_form = len(request.form) > 0
+            form = ForgotPwdForm(self._app, user_manager=self)
+            update_res = True
+
+            if request.method == "POST":
+                if is_form and form.validate_on_submit():
+                    uname = form.username.data
+                    new_pwd = form.new_password.data
+                elif is_form:
+                    # flash_print(f"Password Reset Fail! Bad form", "is-warning")
+                    uname = new_pwd = None
+                else:
+                    # make sure posting with normal method (not via form) still works
+                    args = request.args
+                    uname = args.get("uname")
+                    new_pwd = args.get("new_pwd")
+
+                if uname != None and new_pwd != None:
+                    update_res = self.update_pwd(uname, new_pwd)
+
+                    if update_res == 1:
+                        flash_print("Password Reset Successful", "is-success")
+                        return redirect(url_for('index'))
+                print(f"Password Reset Failed: {uname} w/ {new_pwd}")
                 flash("Password Reset Failed", "is-danger")
 
-        @self._app.route("/logout", methods=["GET", "POST"])
+            # on GET or failure, reload
+            return render_template("forgot_password.html", title="SpotASpot Reset Password", form=form)
+
+        @self._app.route("/user/logout", methods=["GET", "POST"])
         @login_required
         def logout():
             logout_user()
@@ -298,17 +415,17 @@ class WebApp(UserManager):
 
 
     def createCarRoutes(self):
-        @self._app.route("/cars/add_tag", methods=["GET", "POST"])
+        @self._app.route("/cars/add_tag", methods=["POST"])
         def add_tag():
             """Returns the newly created tag's id"""
             return {"new_tag_id": self.add_tag()}
 
-        @self._app.route("/cars/add_car", methods=["POST"], defaults={
-            'user_id': None, 'front_tag': None, 'middle_tag': None, 'rear_tag': None})
-        @self._app.route("/cars/add_car?user_id=<user_id>&front_tag=<front_tag>&middle_tag=<middle_tag>&rear_tag=<rear_tag>", methods=["POST"])
-        def add_car(user_id: int, front_tag: int, middle_tag: int, rear_tag: int):
+        @self._app.route("/cars/add_car", methods=["POST"], defaults={'front_tag': None, 'middle_tag': None, 'rear_tag': None})
+        @self._app.route("/cars/add_car?front_tag=<front_tag>&middle_tag=<middle_tag>&rear_tag=<rear_tag>", methods=["POST"])
+        @login_required
+        def add_car(front_tag: int, middle_tag: int, rear_tag: int):
             args = request.args
-            user_id = args.get("user_id")
+            user_id = current_user.id
             front_tag = args.get("front_tag")
             middle_tag = args.get("middle_tag")
             rear_tag = args.get("rear_tag")

@@ -128,6 +128,53 @@ class DB_Manager(ReaderDBManager, MobileAppDBManager, DetectionAlgo):
             print(f"add_car error: {err}")
             return -1
 
+    def does_username_exist(self, uname: str) -> bool:
+        self.check_conn()
+        try:
+            self.cursor.execute("call does_username_exist(%s)", (uname))
+
+            # ignore name of field and just get the value
+            return list(self.cursor.fetchall()[0].values())[0]
+        except Exception as err:
+            print(f"does_username_exist error: {err}")
+            return -1
+
+    def get_user_id(self, uname) -> int:
+        """:returns the user_id of user with 'username' (-1 on error)"""
+        self.check_conn()
+        try:
+            self.cursor.execute("select get_user_id(%s)", uname)
+            user_ids = list(self.cursor.fetchone().values())[0]
+            # use '.values()' to make python agnostic to the name of returned col in procedure
+            # return user_ids[0].values()[0] if len(user_ids) > 0 else -1
+            return user_ids if user_ids is not None else -1
+        except:
+            return -1
+
+    def update_pwd(self, uname: str, pwd: str) -> bool:
+        """:returns -1 on error, 1 on success"""
+        self.check_conn()
+        try:
+            self.cursor.execute("call update_pwd(%s, %s)", (uname, pwd))
+
+            # ignore name of field and just get the value
+            return 1
+        except Exception as err:
+            print(f"update_pwd error: {err}")
+            return -1
+
+    def check_password(self, uname: str, pwd: str) -> bool:
+        """Returns True if password and username are valid to login"""
+        self.check_conn()
+        try:
+            self.cursor.execute("call check_password(%s, %s)", (uname, pwd))
+
+            # ignore name of field and just get the value
+            return list(self.cursor.fetchall()[0].values())[0]
+        except Exception as err:
+            print(f"check_password error: {err}")
+            return -1
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Database Python Connector")
     parser.add_argument(

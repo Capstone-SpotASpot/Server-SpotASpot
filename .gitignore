@@ -132,4 +132,6 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
+# test
 src/database/test/
+src/backend/test/login_cookie
