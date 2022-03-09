@@ -114,6 +114,7 @@ To see what some of the data will look like, try running the tests found in
 `http://71.167.9.86:31025/user/get_id`
 - `returns`: {'user_id': `<id>`}
 - **Note:** You have to be logged in to get this
+
 ### Adding a New Car
 
 `http://71.167.9.86:31025/cars/add_car?front_tag=<front_tag>&middle_tag=<middle_tag>&rear_tag=<rear_tag>`
@@ -127,6 +128,7 @@ To see what some of the data will look like, try running the tests found in
 
 `http://71.167.9.86:31025/cars/add_tag`
 - adds a tag to the database (not associated with any car yet)
+- have to POST to it since changing state of system
 - `returns`: {"new_tag_id": `int`}
   - the id of the new tag
 

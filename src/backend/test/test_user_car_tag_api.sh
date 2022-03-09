@@ -67,12 +67,24 @@ function run_test() {
     $1 #| python -c "import sys,json; print(json.load(sys.stdin)['new_tag_id'])"
     echo "" # newline
 }
+login_cookie="./login_cookie"
 
 echo "TEST 1 - Adding User (this will fail if user already added in another test)"
-run_test "curl -X POST $url/user/signup?fname=test_fname&lname=test_lname&username=test_username&password=test_pwd&password2=test_pwd --output /dev/null"
+run_test "curl -s -X POST $url/user/signup?fname=test_fname&lname=test_lname&username=test_username&password=test_pwd&password2=test_pwd --output /dev/null"
 
-# echo "TEST 2 - Changing User Password"
-run_test "curl -X POST $url/user/forgot_password?uname=test_username&new_pwd=reset_pwd --output /dev/null"
+echo "TEST 2 - Changing User Password"
+run_test "curl -s -X POST $url/user/forgot_password?uname=test_username&new_pwd=reset_pwd --output /dev/null"
 
-# echo "TEST 3 - Logging in with User (using reset password)"
-run_test "curl -X POST $url/user/login?username=test_username&pwd=reset_pwd  --output /dev/null"
+echo "TEST 3 - Logging in with User (using reset password)"
+run_test "curl -s --cookie-jar $login_cookie -X POST $url/user/login?username=test_username&pwd=reset_pwd  --output /dev/null"
+
+echo "TEST 4 - Adding 3x tags"
+run_test "curl -X POST $url/cars/add_tag"
+run_test "curl -X POST $url/cars/add_tag"
+run_test "curl -X POST $url/cars/add_tag"
+
+echo "TEST 5 - Getting user_id for test_username (logged in)"
+run_test "curl --cookie $login_cookie -X GET $url/user/get_id"
+
+echo "TEST 6 - Adding Car: Need to be done manually using info above"
+echo "curl --cookie $login_cookie -X POST \"$url/cars/add_car?user_id=<user_id>&front_tag=<front_tag>&middle_tag=<middle_tag>&rear_tag=<rear_tag>\""
