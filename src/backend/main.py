@@ -96,6 +96,7 @@ class WebApp(UserManager):
     def createInfoRoutes(self):
         """All routes for internal passing of information"""
         @self._app.route("/", methods=["GET"])
+        @self._app.route("/index", methods=["GET"])
         def index():
             return redirect(url_for("api"))
 
