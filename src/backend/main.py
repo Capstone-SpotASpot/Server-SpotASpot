@@ -26,7 +26,7 @@ from flask_login import login_user, current_user, login_required, logout_user
 from user import User
 from userManager import UserManager
 from db_manager import DB_Manager
-from flask_helpers import FlaskHelper
+from flask_helpers import FlaskHelper, flash_print
 from registrationForm import RegistrationForm
 from loginForm import LoginForm
 from forgotPasswordForm import ForgotPwdForm
@@ -313,16 +313,15 @@ class WebApp(UserManager):
         def signup(fname:str, lname:str, username:str, password:str, password2: str):
             if current_user.is_authenticated: return redirect(url_for('index'))
 
-            print(f"before form: fname={fname}, lname={lname}, username={username}, password={password}/{password2}")
-            is_form = True
+            is_form = len(request.form) > 0
             form = RegistrationForm(self._app, user_manager=self)
 
-            def signup_fail():
-                flash('Signup Failed!', "is-danger")
+            def signup_fail(msg=""):
+                flash_print(f'Signup Failed! {msg}', "is-danger")
                 return render_template('registration.html', title="SpotASpot Signup", form=form)
-            def signup_succ():
+            def signup_succ(username, msg=""):
                 # since validated, always return to login
-                flash("Registration was successful!", "is-success")
+                flash_print(f"Registration was successful for {username}! {msg}", "is-success")
                 return redirect(url_for("login"))
 
             if request.method == "GET":
@@ -348,9 +347,9 @@ class WebApp(UserManager):
 
                 add_res = self.add_user(fname, lname, username, pwd)
                 if(add_res != -1):
-                    return signup_succ()
+                    return signup_succ(username)
                 else:
-                    return signup_fail()
+                    return signup_fail(msg="failed to add user to db")
 
             elif request.method == "POST":
                 print("Registration Validation Failed")

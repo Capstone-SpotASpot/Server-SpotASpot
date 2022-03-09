@@ -1,4 +1,4 @@
-from flask import Flask, url_for
+from flask import Flask, url_for, flash
 from werkzeug.routing import Rule
 from typing import List
 
@@ -7,6 +7,11 @@ class FlaskHelper():
         """Create this object after creating all flask routes"""
         self.app = app
         self.port = port
+
+    @classmethod
+    def flash_print(cls, msg: str, style: str=None):
+        print(msg)
+        flash(msg, style if style != None else "")
 
     def has_no_empty_params(self, rule: Rule):
         defaults = rule.defaults if rule.defaults is not None else ()
@@ -58,3 +63,7 @@ class FlaskHelper():
         """Print all Flask app routes"""
         print("Existing URLs:")
         print("\n".join(self.get_links()))
+
+
+# exports
+flash_print = FlaskHelper.flash_print
