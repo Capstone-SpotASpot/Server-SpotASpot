@@ -308,41 +308,49 @@ class WebApp(UserManager):
 
 
         @self._app.route("/user/signup", methods=["GET", "POST"],
-                         defaults={'fname': None, 'lname': None, 'username': None, 'pwd': None})
-        @self._app.route("/user/signup?fname=<fname>&lname=<lname>&username=<username>&pwd=<pwd>", methods=["GET", "POST"])
-        def signup(fname:str, lname:str, username:str, pwd:str):
+                         defaults={'fname': None, 'lname': None, 'username': None, 'password': None, 'password2': None})
+        @self._app.route("/user/signup?fname=<fname>&lname=<lname>&username=<username>&password=<password>&password2=<password2>", methods=["GET", "POST"])
+        def signup(fname:str, lname:str, username:str, password:str, password2: str):
             if current_user.is_authenticated: return redirect(url_for('index'))
 
+            print(f"before form: fname={fname}, lname={lname}, username={username}, password={password}/{password2}")
+            is_form = True
             form = RegistrationForm(self._app, user_manager=self)
+
+            def signup_fail():
+                flash('Signup Failed!', "is-danger")
+                return render_template('registration.html', title="SpotASpot Signup", form=form)
+            def signup_succ():
+                # since validated, always return to login
+                flash("Registration was successful!", "is-success")
+                return redirect(url_for("login"))
+
             if request.method == "GET":
+                print("in GET")
                 return render_template("registration.html", title="SpotASpot Signup", form=form)
 
-            elif request.method == "POST" and form.validate_on_submit():
-                # TODO: make sure posting with normal method (not via form) still works
-                # args = request.args
-                # fname = args.get("fname")
-                # lname = args.get("lname")
-                # username = args.get("username")
-                # pwd = args.get("pwd")
-                fname = form.fname.data
-                lname = form.lname.data
-                username = form.username.data
-                pwd = form.password.data
-
-                # print(f"fname={fname}, lname={lname}, username={username}, pwd={pwd}")
-
-                # dont add reader if bad data
-                if fname == None or lname == None or username == None or pwd == None:
-                    flash('Signup Failed!', "is-danger")
+            elif request.method == "POST":
+                if is_form and form.validate_on_submit():
+                    fname = form.fname.data
+                    lname = form.lname.data
+                    username = form.username.data
+                    pwd = form.password.data
+                elif is_form:
+                    return signup_fail()
                 else:
-                    add_res = self.add_user(fname, lname, username, pwd)
-                    if(add_res != -1):
-                        flash("Registration as user was successful!", "is-success")
-                    else:
-                        flash('Signup Failed!', "is-danger")
+                    # make sure posting with normal method (not via form) still works
+                    args = request.args
+                    fname = args.get("fname")
+                    lname = args.get("lname")
+                    username = args.get("username")
+                    pwd = args.get("password")
+                    pwd2 = args.get("password2")
 
-                # since validated, always return to login
-                return redirect(url_for("login"))
+                add_res = self.add_user(fname, lname, username, pwd)
+                if(add_res != -1):
+                    return signup_succ()
+                else:
+                    return signup_fail()
 
             elif request.method == "POST":
                 print("Registration Validation Failed")
@@ -389,7 +397,7 @@ class WebApp(UserManager):
             return {"new_tag_id": self.add_tag()}
 
         @self._app.route("/cars/add_car", methods=["POST"], defaults={'front_tag': None, 'middle_tag': None, 'rear_tag': None})
-        @self._app.route("/cars/add_car?&front_tag=<front_tag>&middle_tag=<middle_tag>&rear_tag=<rear_tag>", methods=["POST"])
+        @self._app.route("/cars/add_car?front_tag=<front_tag>&middle_tag=<middle_tag>&rear_tag=<rear_tag>", methods=["POST"])
         @login_required
         def add_car(front_tag: int, middle_tag: int, rear_tag: int):
             args = request.args
