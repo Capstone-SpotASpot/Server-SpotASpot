@@ -261,33 +261,51 @@ class WebApp(UserManager):
         @self._app.route("/user/login?username=<username>&pwd=<pwd>", methods=["GET", "POST"])
         def login(username: str, pwd: str):
             # dont login if already logged in
-            if current_user.is_authenticated:
-                return redirect(url_for('index'))
+            if current_user.is_authenticated: return redirect(url_for('index'))
 
+            is_form = len(request.form) > 0
             # to provide UserManager, use self which is a child of it
             form = LoginForm(self._app, self)
 
+            def login_fail(msg=""):
+                flash_print(f'Invalid Username or Password!', "is-danger")
+                return redirect(url_for('login'))
+
+            username = None
+            pwd = None
+            rememberMe = None
             if request.method == "GET":
                 return render_template("login.html", title="SpotASpot Login", form=form)
-            elif request.method == "POST" and not form.validate_on_submit():
-                # unsuccessful login
-                flash("Invalid Username or Password!", "is-danger")
-                return render_template('login.html', title="SpotASpot Login", form=form)
             elif request.method == "POST":
-                # username & pwd must be right at this point, so login
-                # https://flask-login.readthedocs.io/en/latest/#flask_login.LoginManager.user_loader
-                # call loadUser() / @user_loader in userManager.py
-                user_id = self.get_user_id(form.username.data)
-                user = User(user_id)
-                login_user(user, remember=form.rememberMe.data)
+                if is_form and form.validate_on_submit():
+                    username = form.username.data
+                    pwd = form.password.data
+                    rememberMe = form.rememberMe.data
+                elif is_form:
+                    # unsuccessful login
+                    return login_fail()
+                else:
+                    # make sure posting with normal method (not via form) still works
+                    args = request.args
+                    username = args.get("username")
+                    pwd = args.get("pwd")
+                    rememberMe = False
 
-                # flash messages for login
-                flash("Login Successful!", "is-success")
-                flash(f"user id: {user_id}", "is-info") # format str safe bc not user input
+                    # verify valid login
+                    if(not self.check_password(username, pwd)):
+                        # unsuccessful login
+                        return login_fail()
 
-            elif not is_validated:
-                # unsuccessful login
-                login_suc = False
+            # username & pwd must be right at this point, so login
+            # https://flask-login.readthedocs.io/en/latest/#flask_login.LoginManager.user_loader
+            # call loadUser() / @user_loader in userManager.py
+            user_id = self.get_user_id(username)
+            user = User(user_id)
+            login_user(user, remember=rememberMe)
+
+            # flash messages for login
+            flash("Login Successful!", "is-success")
+            flash(f"user id: {user_id}", "is-info") # format str safe bc not user input
 
             # route to original destination
             next = flask.request.args.get('next')

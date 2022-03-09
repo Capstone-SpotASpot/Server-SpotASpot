@@ -75,4 +75,4 @@ run_test "curl -X POST $url/user/signup?fname=test_fname&lname=test_lname&userna
 run_test "curl -X POST $url/user/forgot_password?uname=test_username&new_pwd=reset_pwd --output /dev/null"
 
 # echo "TEST 3 - Logging in with User (using reset password)"
-# run_test "curl -X POST $url/user/login?username=test_username&pwd=reset_pwd"
+run_test "curl -X POST $url/user/login?username=test_username&pwd=reset_pwd  --output /dev/null"
