@@ -11,8 +11,12 @@
 
     <script src="../static/js/extern/jquery-3.5.1.min.js"></script>
     <script src="../static/js/navbar.js"></script>
+    {% block head %}{% endblock %} <!--Allow extenders to insert there own headers-->
 </head>
-<body class="has-navbar-fixed-top" style="background-color:aquamarine;">
+
+{% block body %}
+<body class="has-navbar-fixed-top has-background-primary">
+{% endblock %}
     <div class="hero is-fullheight">
         <div class="hero-head">
             <nav class="navbar is-fixed-top has-background-grey-light" role="navigation" aria-label="main navigation">
