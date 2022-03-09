@@ -87,12 +87,13 @@ To see what some of the data will look like, try running the tests found in
 
 ### Adding a New User / Signup
 
-`http://71.167.9.86:31025/user/signup?fname=<fname>&lname=<lname>&username=<username>&pwd=<pwd>`
+`http://71.167.9.86:31025/user/signup?fname=<fname>&lname=<lname>&username=<username>&password=<password>&password2=<password2>`
 
 - `fname:`: The first name of the user
 - `lname:`: The last name of the user
 - `username:`: The user's username
-- `pwd:`: Their password (will be hashed)
+- `password:`: Their password (will be hashed)
+- `password2:`: Similar to password (must match it like confirmation)
 - `returns`: redirects to login page or back to registration if failed (basically nothing)
 
 
