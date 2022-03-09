@@ -85,29 +85,39 @@ To see what some of the data will look like, try running the tests found in
 
 ## Car/Tag/User APIs
 
-### Adding a New User / Registering
+### Adding a New User / Signup
 
-`http://71.167.9.86:31025/user/register?fname=<fname>&lname=<lname>&username=<username>&pwd=<pwd>`
+`http://71.167.9.86:31025/user/signup?fname=<fname>&lname=<lname>&username=<username>&pwd=<pwd>`
 
 - `fname:`: The first name of the user
 - `lname:`: The last name of the user
 - `username:`: The user's username
 - `pwd:`: Their password (will be hashed)
+- `returns`: redirects to login page or back to registration if failed (basically nothing)
 
 
 ### User Forgot Password
 
-`http://71.167.9.86:31025/user/forgot-password`
+`http://71.167.9.86:31025/user/forgot_password?uname=<uname>&new_pwd=<new_pwd>`
+- `uname`: (str) The username whose password you are trying to change
+- `new_pwd`: (str) The new password
 
-- Still a work in progress
-- When done, using this route when logged in as a user will promt a traditional forgot password page
+### User Login
 
+`http://71.167.9.86:31025/user/login?username=<username>&pwd=<pwd>`
+- `uname`: (str) The username to login with
+- `pwd`: (str) The password associated with the username to login with
+
+### Get User Id
+
+`http://71.167.9.86:31025/user/get_id`
+- `returns`: {'user_id': `<id>`}
+- **Note:** You have to be logged in to get this
 ### Adding a New Car
 
-`http://71.167.9.86:31025/cars/add_car?user_id=<user_id>&front_tag=<front_tag>&middle_tag=<middle_tag>&rear_tag=<rear_tag>`
+`http://71.167.9.86:31025/cars/add_car?front_tag=<front_tag>&middle_tag=<middle_tag>&rear_tag=<rear_tag>`
 - Used to add a new car to the database
-- `user_id`: the id of the user according to the database
-  - (this info can be requested from the server using other API)
+- **Note:** Have to be logged in to add a car
 - `front_tag`, `middle_tag`, `rear_tag` the id's of the 3 tags on the car (according to the database)
 - `returns`: {"new_car_id": `int`}
   - The id of the new car
