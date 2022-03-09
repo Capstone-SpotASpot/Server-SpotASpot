@@ -304,8 +304,8 @@ class WebApp(UserManager):
             login_user(user, remember=rememberMe)
 
             # flash messages for login
-            flash("Login Successful!", "is-success")
-            flash(f"user id: {user_id}", "is-info") # format str safe bc not user input
+            flash_print("Login Successful!", "is-success")
+            flash_print(f"user id: {user_id}", "is-info") # format str safe bc not user input
 
             # route to original destination
             next = flask.request.args.get('next')
@@ -337,17 +337,14 @@ class WebApp(UserManager):
 
             def signup_fail(msg=""):
                 flash_print(f'Signup Failed! {msg}', "is-danger")
-                return render_template('registration.html', title="SpotASpot Signup", form=form)
+                # try again
+                return redirect(url_for("signup"))
             def signup_succ(username, msg=""):
                 # since validated, always return to login
-                flash_print(f"Registration was successful for {username}! {msg}", "is-success")
+                flash_print(f"Signup successful for {username}! {msg}", "is-success")
                 return redirect(url_for("login"))
 
-            if request.method == "GET":
-                print("in GET")
-                return render_template("registration.html", title="SpotASpot Signup", form=form)
-
-            elif request.method == "POST":
+            if request.method == "POST":
                 if is_form and form.validate_on_submit():
                     fname = form.fname.data
                     lname = form.lname.data
@@ -371,10 +368,10 @@ class WebApp(UserManager):
                     return signup_fail(msg="failed to add user to db")
 
             elif request.method == "POST":
-                print("Registration Validation Failed")
+                print("Signup Validation Failed")
 
             # on GET or failure, reload
-            return render_template('registration.html', title="SpotASpot Signup", form=form)
+            return render_template('signup.html', title="SpotASpot Signup", form=form)
 
 
         @self._app.route("/user/forgot_password", methods=["GET", "POST"], defaults={'uname': None, 'new_pwd': None})
@@ -401,7 +398,7 @@ class WebApp(UserManager):
                     update_res = self.update_pwd(uname, new_pwd)
 
                     if update_res == 1:
-                        flash("Password Reset Successful", "is-success")
+                        flash_print("Password Reset Successful", "is-success")
                         return redirect(url_for('index'))
                 print(f"Password Reset Failed: {uname} w/ {new_pwd}")
                 flash("Password Reset Failed", "is-danger")
