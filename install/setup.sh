@@ -178,7 +178,6 @@ if [[ ${deployServices} = true ]]; then
         symbols=("!" "-" "*" "+" "@" "#" "%" "^" ".")
         s1=${symbols[ RANDOM % ${#symbols[@]} ]}
         mysql_rand_pwd=$(date +%s | sha256sum | base64 | head -c 32 ; echo)${s1}${2}
-        useradd "${mysql_user}"
         mysql -e "DROP USER IF EXISTS ${mysql_user_host}"
         mysql -e "CREATE USER ${mysql_user_host} IDENTIFIED BY '${mysql_rand_pwd}'"
         mysql -e "GRANT ALL PRIVILEGES ON ${proj_name}.* TO ${mysql_user_host};"
