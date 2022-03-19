@@ -60,7 +60,7 @@ To see what some of the data will look like, try running the tests found in
 `http://71.167.9.86:31025/mobile/get_is_spot_taken/<int:reader_id>`
 - Tells querrier if the spot associated with the passed reader_id is taken
   - should be used in conjunction with `get_local_readers` to check all readers in a certain radius to fit on screen
-- `reader_id`: The reader's spot to check if taken
+- `reader_id`: The reader's spot to check if taken (>= 1)
 - `returns`: Given a reader_id, returns the status of the spots it can reach.
   - {spot_id: {
       is_spot_taken: `<is_spot_taken>`,

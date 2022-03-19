@@ -48,6 +48,11 @@ class MobileAppDBManager():
         # TODO: maybe change this to spot id and not reader_id??
         self.db_start_cb()
         try:
+            if(not self.does_reader_exist(reader_id)):
+                return { int(reader_id): {
+                    'error': "reader does not exist"
+                }}
+
             self.cursor.execute("call is_spot_taken(%s)", reader_id)
             # form:  [{spot_id, longitude, latitude, status}]
             raw_status_dict = self.cursor.fetchall()
@@ -56,7 +61,7 @@ class MobileAppDBManager():
             status_dict = {}
             for row in raw_status_dict:
                 # spot_status = 0 on not taken, 1 on taken, -1 on other
-                print("row['spot_status'] = {}".format(row['spot_status']))
+                # print("row['spot_status'] = {}".format(row['spot_status']))
                 is_spot_taken = None
                 if row['spot_status'] == 0:
                     is_spot_taken = False
@@ -74,6 +79,15 @@ class MobileAppDBManager():
         except Exception as err:
             print(f"is_spot_taken error: {err}")
             return None
+
+    def does_reader_exist(self, reader_id: int) -> bool:
+        self.db_start_cb()
+        try:
+            self.cursor.execute("select does_reader_exist(%s)", (reader_id))
+            return list(self.cursor.fetchone().values())[0]
+        except Exception as err:
+            print(f"does_reader_exist() err: {err}")
+            return False
 
     def calc_coord_dist(self, lat1: float, long1: float, lat2: float, long2: float) -> float:
         self.db_start_cb()

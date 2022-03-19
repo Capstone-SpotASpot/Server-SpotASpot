@@ -304,6 +304,28 @@ END $$
 DELIMITER ;
 
 
+DROP FUNCTION IF EXISTS does_reader_exist;
+DELIMITER $$
+-- given: reader_id
+-- returns: If reader exists
+CREATE FUNCTION does_reader_exist (reader_id_in INT)
+  RETURNS BOOLEAN
+  READS SQL DATA
+  DETERMINISTIC
+BEGIN
+  DECLARE reader_exists BOOLEAN;
+  set reader_exists = (
+    select count(*) > 0
+    from readers
+    where readers.reader_id = reader_id_in
+    group by readers.reader_id
+  );
+  return reader_exists;
+END $$
+-- end of does_reader_exist
+DELIMITER ;
+
+
 -- ###### End of Functions ######
 
 
