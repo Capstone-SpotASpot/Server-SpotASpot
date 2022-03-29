@@ -62,7 +62,8 @@ class WebApp(UserManager):
         self._is_debug = is_debug
         self._host = '0.0.0.0'
         self._port = port
-        logLevel = logging.INFO if self._is_debug == True else logging.ERROR
+        # logLevel = logging.INFO if self._is_debug == True else logging.ERROR
+        logLevel = logging.INFO
         self._logger.setLevel(logLevel)
 
         # create routes (and print routes)
@@ -87,11 +88,18 @@ class WebApp(UserManager):
 
     def generateRoutes(self):
         """Wrapper around all url route generation"""
+        self.createHelperRoutes()
         self.createUserPages()
         self.createInfoRoutes()
         self.createMobileRoutes()
         self.createReaderPostRoutes()
         self.createCarRoutes()
+
+    def createHelperRoutes(self):
+        @self._app.before_request
+        def log_request():
+            self._app.logger.info("Request: %s", request)
+            return None
 
     def createInfoRoutes(self):
         """All routes for internal passing of information"""
