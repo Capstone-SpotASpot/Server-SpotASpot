@@ -17,6 +17,7 @@ OR... if signal_strength is included (note, right now this does not affect anyth
 - Probably the most important route for readers. Use this route to send observation data to the server
 - `reader_id`: (int) The id of the reader sending the data
 - `tag_id`: (int) The seen rfid tag's id
+  - Using special case of `-1` means reader no longer sees any tags
 - `signal_strength`: (Optional, float) The strength of the rfid signal received
 - `returns`: {"car_id": `car_id`,"detection_id": `detection_id`,"is_car_parked": `boolean`,"parked_spot_id": `parked_spot_id`}
   - Note: any returns of -1 denote errors or not enough info to make conclusive car detection
