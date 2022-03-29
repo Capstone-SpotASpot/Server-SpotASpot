@@ -112,7 +112,7 @@ DROP TABLE IF EXISTS observation_event;
 CREATE TABLE observation_event
 (
     observation_id INT PRIMARY KEY AUTO_INCREMENT NOT NULL,
-    tag_seen_id INT NOT NULL,
+    tag_seen_id INT, -- NULL implies "observation event" was actually reader clearing its last entry
     reader_seen_id INT NOT NULL,
     time_observed DATETIME NOT NULL,
     signal_strength FLOAT NOT NULL,
@@ -526,7 +526,6 @@ DELIMITER ;
 
 DROP PROCEDURE IF EXISTS handle_empty_observ_ev;
 DELIMITER $$
-
 CREATE PROCEDURE handle_empty_observ_ev (reader_id_in INT, empty_observ_ev INT)
 BEGIN
 
@@ -536,13 +535,13 @@ BEGIN
   END;
 
   update observation_event
-  join detects on detects.observation_event1_id = observation_event.observation_id
-    or detects.observation_event2_id = observation_event.observation_id
-    or detects.observation_event3_id = observation_event.observation_id
+  -- join detects on detects.observation_event1_id = observation_event.observation_id
+  --   or detects.observation_event2_id = observation_event.observation_id
+  --   or detects.observation_event3_id = observation_event.observation_id
   set observation_event.is_relevant = 0
   where (
-    detects.detecting_reader_id = reader_id_in and
-    observation_event.is_relevent = 1 and
+    observation_event.reader_seen_id = reader_id_in and
+    observation_event.is_relevant = 1 and
     -- dont mark this empty event as irrelevent
     observation_event.observation_id != empty_observ_ev
   );
@@ -604,6 +603,7 @@ CREATE PROCEDURE add_observation(
 ) BEGIN  -- use transaction bc multiple inserts and should rollback on error
   DECLARE created_observ_id INT;
   DECLARE seen_car_id INT;
+  DECLARE resolved_tag_id INT;
 
   DECLARE EXIT HANDLER FOR SQLEXCEPTION
   BEGIN
@@ -613,10 +613,19 @@ CREATE PROCEDURE add_observation(
   START TRANSACTION; -- may need to rollback bc multiple inserts
   -- mark any past event with the given tag_id as irrelevant
 
+  -- cant add to observation table with -1 (not a valid tag_id and will error)
+  -- instead refer to "clearing" actions with NULL
+  if seen_tag_id_in = -1
+  then
+    set resolved_tag_id = NULL;
+  else
+    set resolved_tag_id = seen_tag_id_in;
+  end if;
+
   INSERT INTO observation_event
     (observation_id, reader_seen_id, tag_seen_id, time_observed, signal_strength, is_relevant)
   VALUES
-    (DEFAULT, reader_id_in, seen_tag_id_in, observation_time_in, signal_strength_in, true);
+    (DEFAULT, reader_id_in, resolved_tag_id, observation_time_in, signal_strength_in, true);
 
   SET created_observ_id = LAST_INSERT_ID();
 
@@ -635,9 +644,9 @@ CREATE PROCEDURE add_observation(
   COMMIT;
 END $$
 -- end of add_observation
--- resets the DELIMETER
 DELIMITER ;
 -- CALL add_observation("2022-02-06 10:20:30",13,2,4);
+-- CALL add_observation("2022-02-06 10:20:30",13,1,-1); -- test clearing spot w/ -1
 
 DROP PROCEDURE IF EXISTS add_detection_and_park_car;
 DELIMITER $$

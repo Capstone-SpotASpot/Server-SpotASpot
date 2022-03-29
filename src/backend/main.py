@@ -152,7 +152,7 @@ class WebApp(UserManager):
                 "new_reader_added": new_reader_id
             }
 
-        @self._app.route("/reader/send_event_data", defaults={'reader_id': -1, 'tag_id': -1, 'signal_strength': -1}, methods=["POST"])
+        @self._app.route("/reader/send_event_data", defaults={'reader_id': None, 'tag_id': None, 'signal_strength': None}, methods=["POST"])
         @self._app.route("/reader/send_event_data?reader_id=<reader_id>&tag_id=<tag_id>&signal_strength=<signal_strength>", methods=["POST"])
         def reader_send_event_data(reader_id, tag_id, signal_strength) -> SendEventDataRes:
             """
@@ -162,7 +162,7 @@ class WebApp(UserManager):
             """
             # Receive + Store data from reader
             args = request.args
-            is_valid_arg    = lambda x: x != None and (x != -1 and x != -1.0)
+            is_valid_arg    = lambda x: x != None # and (x != -1 and x != -1.0)
             sanitize_choice = lambda x, y: x if is_valid_arg(x) else (y if is_valid_arg(y) else -1)
             reader_id       = int(sanitize_choice(reader_id, args.get('reader_id')))
             tag_id          = int(sanitize_choice(tag_id, args.get('tag_id')))

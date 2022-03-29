@@ -36,8 +36,8 @@ class DetectionAlgo():
         self.db_start_cb()
         try:
             self.cursor.execute("call cmp_observ_ev(%s)", (observ_id))
-            cmp_observ_res = list(self.cursor.fetchall())[0]
-            if 'Level' in cmp_observ_res and cmp_observ_res['Level'] == "Error":
+            cmp_observ_res = self.cursor.fetchone()
+            if cmp_observ_res and 'Level' in cmp_observ_res and cmp_observ_res['Level'] == "Error":
                 print(f"cmp_observ_ev() err: {cmp_observ_res}")
                 return None
             return cmp_observ_res
