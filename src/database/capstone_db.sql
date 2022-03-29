@@ -266,28 +266,32 @@ DELIMITER ;
 
 DROP FUNCTION IF EXISTS get_car_id_from_tag;
 DELIMITER $$
-
 CREATE FUNCTION get_car_id_from_tag (tag_id_in INT)
-  -- given tag_id, return the car_id
+  -- given tag_id, return the car_id (-1 if no match)
   RETURNS INT
   READS SQL DATA
   DETERMINISTIC
 BEGIN
-  return (
+  DECLARE found_car_id INT;
+  SET found_car_id = (
     select car_id
     from registered_cars
     where (
       front_tag = tag_id_in or
       middle_tag = tag_id_in or
       rear_tag = tag_id_in
-
     )
     limit 1
   );
 
+  if (found_car_id) then
+    return (found_car_id);
+  else
+    return (-1);
+  end if;
+
 END $$
 -- end of get_car_id_from_tag
--- resets the DELIMETER
 DELIMITER ;
 
 DELIMITER $$
@@ -520,6 +524,73 @@ END $$
 -- resets the DELIMETER
 DELIMITER ;
 
+DROP PROCEDURE IF EXISTS handle_empty_observ_ev;
+DELIMITER $$
+
+CREATE PROCEDURE handle_empty_observ_ev (reader_id_in INT, empty_observ_ev INT)
+BEGIN
+
+  DECLARE EXIT HANDLER FOR SQLEXCEPTION
+  BEGIN
+    SHOW ERRORS;
+  END;
+
+  update observation_event
+  join detects on detects.observation_event1_id = observation_event.observation_id
+    or detects.observation_event2_id = observation_event.observation_id
+    or detects.observation_event3_id = observation_event.observation_id
+  set observation_event.is_relevant = 0
+  where (
+    detects.detecting_reader_id = reader_id_in and
+    observation_event.is_relevent = 1 and
+    -- dont mark this empty event as irrelevent
+    observation_event.observation_id != empty_observ_ev
+  );
+
+END $$
+-- end of handle_empty_observ_ev
+-- resets the DELIMETER
+DELIMITER ;
+
+
+DROP PROCEDURE IF EXISTS handle_new_observ_ev;
+DELIMITER $$
+
+CREATE PROCEDURE handle_new_observ_ev (seen_car_id INT, new_observ_ev INT, seen_tag_id_in INT)
+BEGIN
+  DECLARE EXIT HANDLER FOR SQLEXCEPTION
+  BEGIN
+    SHOW ERRORS;
+  END;
+
+  -- mark observes for with this tag belonging to the car & not seen by THIS reader to be irrelevant (except this one)
+  with get_tag_ids (front_tag, middle_tag, rear_tag) as (
+    -- should only return 1 row
+    select front_tag, middle_tag, rear_tag
+    from registered_cars
+    where car_id = seen_car_id
+  )
+
+  -- use the known observations to update relevance of tags associated with car if not seen by current reader
+  update observation_event
+    join get_tag_ids on get_tag_ids.front_tag = observation_event.tag_seen_id
+      or get_tag_ids.middle_tag = observation_event.tag_seen_id
+      or get_tag_ids.rear_tag = observation_event.tag_seen_id
+  set is_relevant = 0
+  where (
+    -- same reader & same tag some time later (heartbeat) mark old one as irrelevant
+    -- diff reader, same tag, old one -> irrelevant
+    -- reduces to same-tag -> irrelevant
+    observation_event.is_relevant = 1 and
+    observation_event.observation_id != new_observ_ev and
+    observation_event.tag_seen_id = seen_tag_id_in
+  );
+
+END $$
+-- end of handle_new_observ_ev
+-- resets the DELIMETER
+DELIMITER ;
+
 DROP PROCEDURE IF EXISTS add_observation;
 DELIMITER $$
 -- adds a reader observation event to observation and detection association table in database
@@ -542,8 +613,6 @@ CREATE PROCEDURE add_observation(
   START TRANSACTION; -- may need to rollback bc multiple inserts
   -- mark any past event with the given tag_id as irrelevant
 
-  SET seen_car_id = (select get_car_id_from_tag(seen_tag_id_in));
-
   INSERT INTO observation_event
     (observation_id, reader_seen_id, tag_seen_id, time_observed, signal_strength, is_relevant)
   VALUES
@@ -551,28 +620,15 @@ CREATE PROCEDURE add_observation(
 
   SET created_observ_id = LAST_INSERT_ID();
 
-  -- mark observes for with this tag belonging to the car & not seen by THIS reader to be irrelevant (except this one)
-  with get_tag_ids (front_tag, middle_tag, rear_tag) as (
-    -- should only return 1 row
-    select front_tag, middle_tag, rear_tag
-    from registered_cars
-    where car_id = seen_car_id
-  )
-
-  -- use the known observations to update relevance of tags associated with car if not seen by current reader
-  update observation_event
-    join get_tag_ids on get_tag_ids.front_tag = observation_event.tag_seen_id
-      or get_tag_ids.middle_tag = observation_event.tag_seen_id
-      or get_tag_ids.rear_tag = observation_event.tag_seen_id
-  set is_relevant = 0
-  where (
-    -- same reader & same tag some time later (heartbeat) mark old one as irrelevant
-    -- diff reader, same tag, old one -> irrelevant
-    -- reduces to same-tag -> irrelevant
-    observation_event.is_relevant = 1 and
-    observation_event.observation_id != created_observ_id and
-    observation_event.tag_seen_id = seen_tag_id_in
-  );
+  if seen_tag_id_in = -1
+  then
+    -- if reader sends in -1 for a tag, means spot is now empty so mark past car as not seen
+    call handle_empty_observ_ev(reader_id_in, created_observ_id);
+  else
+    -- will be -1 if no car exists with those tags
+    SET seen_car_id = (select get_car_id_from_tag(seen_tag_id_in));
+    call handle_new_observ_ev(seen_car_id, created_observ_id, seen_tag_id_in);
+  end if;
 
   -- select * from observation_event;
   SELECT created_observ_id as 'created_observ_id';
