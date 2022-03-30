@@ -97,6 +97,9 @@ class WebApp(UserManager):
     def createHelperRoutes(self):
         @self._app.before_request
         def log_request():
+            # traditional place to refresh database connection
+            # self.check_conn()
+
             if is_static_req(request): return None
             print("Request ({0}): {1} -- {2}".format(
                 request.remote_addr,
