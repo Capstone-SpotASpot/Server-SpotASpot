@@ -1,6 +1,7 @@
 # Project Specific Ignores
 **-venv/
 dev_cp_script.sh
+**/cookies.txt
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

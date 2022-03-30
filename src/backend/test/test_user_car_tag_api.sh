@@ -67,7 +67,7 @@ function run_test() {
     $1 #| python -c "import sys,json; print(json.load(sys.stdin)['new_tag_id'])"
     echo "" # newline
 }
-cookie="./cookies.txt"
+cookie="cookies.txt"
 
 echo "TEST 1 - Adding User (this will fail if user already added in another test)"
 run_test "curl -s -X POST $url/user/signup?fname=test_fname&lname=test_lname&username=test_username&password=test_pwd&password2=test_pwd --output /dev/null"
@@ -75,19 +75,36 @@ run_test "curl -s -X POST $url/user/signup?fname=test_fname&lname=test_lname&use
 echo "TEST 2 - Changing User Password"
 run_test "curl -s -X POST $url/user/forgot_password?uname=test_username&new_pwd=reset_pwd --output /dev/null"
 
+# --data-urlencode 'username=test_username' \
+# --data-urlencode 'pwd=reset_pwd' \
+# --data-urlencode 'rememberMe=true' \
 echo "TEST 3 - Logging in with User (using reset password)"
-run_test "curl -s --cookie $cookie -X POST $url/user/login?username=test_username&pwd=reset_pwd  --output /dev/null"
+set -x # echo on (hard to multiline curl commands with run_test)
+curl -s \
+    --cookie $cookie \
+    --cookie-jar $cookie \
+    -X POST \
+    "$url/user/login?username=test_username&pwd=reset_pwd&rememberMe=true" \
+    --output /dev/null
+set +x # echo off
 
 echo "TEST 4 - Adding 3x tags"
-tag1=7
-tag2=8
-tag3=9
+tag1=90
+tag2=91
+tag3=92
 run_test "curl -X POST $url/cars/add_tag?tag_id=${tag1}"
 run_test "curl -X POST $url/cars/add_tag?tag_id=${tag2}"
 run_test "curl -X POST $url/cars/add_tag?tag_id=${tag3}"
 
 echo "TEST 5 - Getting user_id for test_username (logged in)"
-run_test "curl --cookie $cookie -X GET $url/user/get_id"
+run_test "curl --cookie $cookie --cookie-jar $cookie -X GET $url/user/get_id"
 
 echo "TEST 6 - Adding Car: Need to be done manually using info above"
-echo "curl --cookie $cookie -X POST \"$url/cars/add_car?user_id=<user_id>&front_tag=${tag1}&middle_tag=${tag2}&rear_tag=${tag3}\""
+# echo "curl --cookie $cookie -X POST \"$url/cars/add_car?user_id=<user_id>&front_tag=${tag1}&middle_tag=${tag2}&rear_tag=${tag3}\""
+set -x # echo on (hard to multiline curl commands with run_test)
+curl \
+    --cookie $cookie \
+    --cookie-jar $cookie \
+    -X POST \
+    "$url/cars/add_car?user_id=<user_id>&front_tag=${tag1}&middle_tag=${tag2}&rear_tag=${tag3}"
+set +x # echo off

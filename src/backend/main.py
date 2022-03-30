@@ -296,9 +296,9 @@ class WebApp(UserManager):
 
     def createUserPages(self):
         # https://flask-login.readthedocs.io/en/latest/#login-example
-        @self._app.route("/user/login", methods=["GET", "POST"], defaults={'username': None, 'pwd': None})
-        @self._app.route("/user/login?username=<username>&pwd=<pwd>", methods=["GET", "POST"])
-        def login(username: str, pwd: str):
+        @self._app.route("/user/login", methods=["GET", "POST"], defaults={'username': None, 'pwd': None, 'rememberMe': None})
+        @self._app.route("/user/login?username=<username>&pwd=<pwd>&rememberMe=<rememberMe>", methods=["GET", "POST"])
+        def login(username: str, pwd: str, rememberMe: bool):
             # dont login if already logged in
             if current_user.is_authenticated: return redirect(url_for('index'))
 
@@ -328,7 +328,10 @@ class WebApp(UserManager):
                     args = request.args
                     username = args.get("username")
                     pwd = args.get("pwd")
-                    rememberMe = False
+                    rememberMe = args.get("rememberMe")
+                    print("Login Params: username = {0}, pwd = {1}, rememberMe={2}".format(
+                        username, pwd, rememberMe
+                    ))
 
                     # verify valid login
                     if(not self.check_password(username, pwd)):
@@ -476,6 +479,8 @@ class WebApp(UserManager):
             rear_tag = args.get("rear_tag")
 
             # dont add reader if bad data
+            print("Adding car with tags ({}, {}, {})".format(
+                front_tag, middle_tag, rear_tag))
             if user_id == None or front_tag == None or middle_tag == None or rear_tag == None:
                 new_car_id = -1
             else:
