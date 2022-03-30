@@ -79,15 +79,16 @@ class DB_Manager(ReaderDBManager, MobileAppDBManager, DetectionAlgo):
             print(f"add_reader error: {err}")
             return -1
 
-    def add_tag(self) -> int:
+    def add_tag(self, new_tag_id: int) -> int:
         """Creates a new database entry for a single tag and returns its unique id.
-
+        Params:
+            new_tag_id: The id of the tag being added
         Returns:
             int: The id of the newly created tag (-1 if error)
         """
         self.check_conn()
         try:
-            self.cursor.execute("call add_tag()")
+            self.cursor.execute("call add_tag(%s)", new_tag_id)
             # ignore name of field and just get the value
             return list(self.cursor.fetchall()[0].values())[0]
         except Exception as err:

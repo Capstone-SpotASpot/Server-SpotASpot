@@ -79,12 +79,15 @@ echo "TEST 3 - Logging in with User (using reset password)"
 run_test "curl -s --cookie $cookie -X POST $url/user/login?username=test_username&pwd=reset_pwd  --output /dev/null"
 
 echo "TEST 4 - Adding 3x tags"
-run_test "curl -X POST $url/cars/add_tag"
-run_test "curl -X POST $url/cars/add_tag"
-run_test "curl -X POST $url/cars/add_tag"
+tag1=7
+tag2=8
+tag3=9
+run_test "curl -X POST $url/cars/add_tag?tag_id=${tag1}"
+run_test "curl -X POST $url/cars/add_tag?tag_id=${tag2}"
+run_test "curl -X POST $url/cars/add_tag?tag_id=${tag3}"
 
 echo "TEST 5 - Getting user_id for test_username (logged in)"
 run_test "curl --cookie $cookie -X GET $url/user/get_id"
 
 echo "TEST 6 - Adding Car: Need to be done manually using info above"
-echo "curl --cookie $cookie -X POST \"$url/cars/add_car?user_id=<user_id>&front_tag=<front_tag>&middle_tag=<middle_tag>&rear_tag=<rear_tag>\""
+echo "curl --cookie $cookie -X POST \"$url/cars/add_car?user_id=<user_id>&front_tag=${tag1}&middle_tag=${tag2}&rear_tag=${tag3}\""

@@ -211,6 +211,12 @@ class WebApp(UserManager):
             # fill in rest of return json if car completely detected and have all the info
             if(detect_res != None and detect_res['is_car_parked'] is True):
                 # car is detected as parked so mark in db
+                self._app.logger.debug("Calling add_detection_and_park_car(%s, %s, %s, %s)", (
+                    detect_res['reader_id'],
+                    detect_res['observation1_id'],
+                    detect_res['observation2_id'],
+                    detect_res['observation3_id']
+                ))
                 detect_car_spot_dict = self.add_detection_and_park_car(
                     detect_res['reader_id'], detect_res['observation1_id'],
                     detect_res['observation2_id'], detect_res['observation3_id']
@@ -424,10 +430,16 @@ class WebApp(UserManager):
 
 
     def createCarRoutes(self):
-        @self._app.route("/cars/add_tag", methods=["POST"])
-        def add_tag():
+        @self._app.route("/cars/add_tag", methods=["POST"], defaults={"tag_id": None})
+        @self._app.route("/cars/add_tag?tag_id=<tag_id>", methods=["POST"])
+        def add_tag(tag_id: int):
             """Returns the newly created tag's id"""
-            return {"new_tag_id": self.add_tag()}
+            args = request.args
+            tag_id = args.get("tag_id")
+            created_tag_id = None
+            if tag_id is not None:
+                created_tag_id = self.add_tag(tag_id)
+            return {"new_tag_id": created_tag_id}
 
         @self._app.route("/cars/add_car", methods=["POST"], defaults={'front_tag': None, 'middle_tag': None, 'rear_tag': None})
         @self._app.route("/cars/add_car?front_tag=<front_tag>&middle_tag=<middle_tag>&rear_tag=<rear_tag>", methods=["POST"])

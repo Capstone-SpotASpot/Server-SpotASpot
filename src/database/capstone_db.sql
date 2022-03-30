@@ -58,6 +58,8 @@ CREATE TABLE tag
 (
     -- the id will get set by how the tag is programmed
     tag_id INT PRIMARY KEY NOT NULL AUTO_INCREMENT,
+    -- bandaid solution to tags not being programable
+    real_tag_id INT NOT NULL,
     car_pos ENUM('front', 'rear', 'middle'),
     date_added DATETIME NOT NULL
 );
@@ -264,6 +266,42 @@ END $$
 DELIMITER ;
 
 
+DROP FUNCTION IF EXISTS get_tag_id_from_real_tag;
+DELIMITER $$
+CREATE FUNCTION get_tag_id_from_real_tag(real_tag_id_in INT)
+ RETURNS INT
+ DETERMINISTIC
+ READS SQL DATA
+BEGIN
+    return (
+      select tag_id
+      from tag
+      where tag.real_tag_id = real_tag_id_in
+      limit 1
+    );
+END $$
+-- resets the DELIMETER
+DELIMITER ;
+
+
+DROP FUNCTION IF EXISTS get_real_tag_id_from_db_tag_id;
+DELIMITER $$
+CREATE FUNCTION get_real_tag_id_from_db_tag_id(db_tag_id_in INT)
+ RETURNS INT
+ DETERMINISTIC
+ READS SQL DATA
+BEGIN
+    return (
+      select tag_id
+      from tag
+      where tag.tag_id = db_tag_id_in
+      limit 1
+    );
+END $$
+-- resets the DELIMETER
+DELIMITER ;
+
+
 DROP FUNCTION IF EXISTS get_car_id_from_tag;
 DELIMITER $$
 CREATE FUNCTION get_car_id_from_tag (tag_id_in INT)
@@ -273,13 +311,15 @@ CREATE FUNCTION get_car_id_from_tag (tag_id_in INT)
   DETERMINISTIC
 BEGIN
   DECLARE found_car_id INT;
+  DECLARE db_tag_id INT;
+  SET db_tag_id = (select get_tag_id_from_real_tag(tag_id_in));
   SET found_car_id = (
     select car_id
     from registered_cars
     where (
-      front_tag = tag_id_in or
-      middle_tag = tag_id_in or
-      rear_tag = tag_id_in
+      front_tag = db_tag_id or
+      middle_tag = db_tag_id or
+      rear_tag = db_tag_id
     )
     limit 1
   );
@@ -421,7 +461,7 @@ DROP PROCEDURE IF EXISTS add_tag;
 DELIMITER $$
 -- creates a new tag and adds to the database
 -- returns the new tag's ID for user client side (-1 for error)
-CREATE PROCEDURE add_tag() BEGIN
+CREATE PROCEDURE add_tag(IN real_tag_id_in INT) BEGIN
   -- use transaction bc multiple inserts and should rollback on error
   DECLARE new_tag_id INT;
   DECLARE EXIT HANDLER FOR SQLEXCEPTION
@@ -433,7 +473,8 @@ CREATE PROCEDURE add_tag() BEGIN
   START TRANSACTION; -- may need to rollback bc multiple inserts
 
   -- leave car position blank as it will be filled in later
-  INSERT INTO tag (tag_id, date_added) VALUES (DEFAULT, NOW());
+  INSERT INTO tag (tag_id,  real_tag_id,    date_added)
+  VALUES          (DEFAULT, real_tag_id_in, NOW());
   SET new_tag_id = LAST_INSERT_ID(); -- get id of last inserted row into a table
   SELECT new_tag_id AS 'new_tag_id';
 
@@ -456,6 +497,9 @@ CREATE PROCEDURE add_car(
 ) BEGIN
   -- use transaction bc multiple inserts and should rollback on error
   DECLARE created_car_id INT;
+  DECLARE db_tag_id_front INT;
+  DECLARE db_tag_id_middle INT;
+  DECLARE db_tag_id_rear INT;
   DECLARE EXIT HANDLER FOR SQLEXCEPTION
   BEGIN
     SHOW ERRORS;
@@ -465,12 +509,15 @@ CREATE PROCEDURE add_car(
   START TRANSACTION; -- may need to rollback bc multiple inserts
 
   -- leave car position blank as it will be filled in later
-  UPDATE tag SET car_pos = 'front' WHERE tag_id = tag_id_front;
-  UPDATE tag SET car_pos = 'middle' WHERE tag_id = tag_id_middle;
-  UPDATE tag SET car_pos = 'rear' WHERE tag_id = tag_id_rear;
+  SET db_tag_id_front = (SELECT get_tag_id_from_real_tag(tag_id_front));
+  SET db_tag_id_middle = (SELECT get_tag_id_from_real_tag(tag_id_middle));
+  SET db_tag_id_rear = (SELECT get_tag_id_from_real_tag(tag_id_rear));
+  UPDATE tag SET car_pos = 'front' WHERE tag_id = db_tag_id_front;
+  UPDATE tag SET car_pos = 'middle' WHERE tag_id = db_tag_id_middle;
+  UPDATE tag SET car_pos = 'rear' WHERE tag_id = db_tag_id_rear;
 
   INSERT INTO registered_cars (car_id, registering_user, front_tag, middle_tag, rear_tag)
-  VALUES (DEFAULT, user_id_in, tag_id_front, tag_id_middle, tag_id_rear);
+  VALUES (DEFAULT, user_id_in, db_tag_id_front, db_tag_id_middle, db_tag_id_rear);
 
   SET created_car_id = LAST_INSERT_ID(); -- get id of last inserted row into a table
   SELECT created_car_id as 'created_car_id';
@@ -557,10 +604,13 @@ DELIMITER $$
 
 CREATE PROCEDURE handle_new_observ_ev (seen_car_id INT, new_observ_ev INT, seen_tag_id_in INT)
 BEGIN
+  DECLARE db_seen_tag_id INT;
   DECLARE EXIT HANDLER FOR SQLEXCEPTION
   BEGIN
     SHOW ERRORS;
   END;
+
+  set db_seen_tag_id = (select get_tag_id_from_real_tag(seen_tag_id_in));
 
   -- mark observes for with this tag belonging to the car & not seen by THIS reader to be irrelevant (except this one)
   with get_tag_ids (front_tag, middle_tag, rear_tag) as (
@@ -582,7 +632,7 @@ BEGIN
     -- reduces to same-tag -> irrelevant
     observation_event.is_relevant = 1 and
     observation_event.observation_id != new_observ_ev and
-    observation_event.tag_seen_id = seen_tag_id_in
+    observation_event.tag_seen_id = db_seen_tag_id
   );
 
 END $$
@@ -619,7 +669,7 @@ CREATE PROCEDURE add_observation(
   then
     set resolved_tag_id = NULL;
   else
-    set resolved_tag_id = seen_tag_id_in;
+    set resolved_tag_id = (select get_tag_id_from_real_tag(seen_tag_id_in));
   end if;
 
   INSERT INTO observation_event
@@ -635,8 +685,8 @@ CREATE PROCEDURE add_observation(
     call handle_empty_observ_ev(reader_id_in, created_observ_id);
   else
     -- will be -1 if no car exists with those tags
-    SET seen_car_id = (select get_car_id_from_tag(seen_tag_id_in));
-    call handle_new_observ_ev(seen_car_id, created_observ_id, seen_tag_id_in);
+    SET seen_car_id = (select get_car_id_from_tag(resolved_tag_id));
+    call handle_new_observ_ev(seen_car_id, created_observ_id, resolved_tag_id);
   end if;
 
   -- select * from observation_event;
@@ -663,6 +713,7 @@ CREATE PROCEDURE add_detection_and_park_car(
   DECLARE created_detect_id INT;
   DECLARE parked_car_id_p INT;
   DECLARE parked_spot_id INT;
+  DECLARE observ_db_tag_id INT;
 
   DECLARE EXIT HANDLER FOR SQLEXCEPTION
   BEGIN
@@ -684,7 +735,8 @@ CREATE PROCEDURE add_detection_and_park_car(
     from observation_event
     where observation_event.observation_id = observation_event1_id_in
   );
-  set parked_car_id_p = (select get_car_id_from_tag(observ1_tag_id));
+  SET observ_db_tag_id = (SELECT get_tag_id_from_real_tag(observ1_tag_id));
+  set parked_car_id_p = (select get_car_id_from_tag(observ_db_tag_id));
 
 
   -- TODO: change this becasue currently assume 1 spot per reader
@@ -1048,19 +1100,18 @@ CALL add_user(
 SET @user2_id = LAST_INSERT_ID();
 
 -- add 6 tags (for 2 cars)
-CALL add_tag();
+CALL add_tag(1);
 SET @tag1_id = LAST_INSERT_ID();
-CALL add_tag();
+CALL add_tag(2);
 SET @tag2_id = LAST_INSERT_ID();
-CALL add_tag();
+CALL add_tag(3);
 SET @tag3_id = LAST_INSERT_ID();
-CALL add_tag();
+CALL add_tag(4);
 SET @tag4_id = LAST_INSERT_ID();
-CALL add_tag();
+CALL add_tag(5);
 SET @tag5_id = LAST_INSERT_ID();
-CALL add_tag();
+CALL add_tag(6);
 SET @tag6_id = LAST_INSERT_ID();
-
 
 
 -- add 2 cars
