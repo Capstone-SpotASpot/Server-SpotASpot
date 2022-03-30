@@ -1,6 +1,14 @@
 from flask import Flask, url_for, flash
 from werkzeug.routing import Rule
 from typing import List
+import json
+
+def is_json(myjson) -> bool:
+    try:
+        json.loads(myjson)
+    except ValueError as e:
+        return False
+    return True
 
 class FlaskHelper():
     def __init__(self, app: Flask, port: int):
