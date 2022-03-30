@@ -3,7 +3,7 @@
 ## Reader APIs
 
 To see what some of the data will look like, try running the tests found in
-[test_reader_api](../src/backend/test/test_reader_api.sh) using the command `bash src/backend/test/test_reader_api.sh -r`.
+[test_reader_api](../../../backend/test/test_reader_api.sh) using the command `bash src/backend/test/test_reader_api.sh -r`.
 
 ### send_event_data
 
@@ -27,7 +27,7 @@ OR... if signal_strength is included (note, right now this does not affect anyth
   - `detection_id` (int) The id of the detection row stored in the database (-1 if not enough info)
 
 To see the results for yourself, try running the tests found in
-[test_detection_algo](../src/backend/test/test_detection_algo.sh) using the command `bash src/backend/test/test_detection_algo.sh -r`.
+[test_detection_algo](../../../backend/test/test_detection_algo.sh) using the command `bash src/backend/test/test_detection_algo.sh -r`.
 
 
 ### add_reader
@@ -44,7 +44,7 @@ To see the results for yourself, try running the tests found in
 ## Mobile App APIs
 
 To see what some of the data will look like, try running the tests found in
-[test_mobile_api](../src/backend/test/test_mobile_api.sh) using the command `bash src/backend/test/test_mobile_api.sh -r`.
+[test_mobile_api](../../../backend/test/test_mobile_api.sh) using the command `bash src/backend/test/test_mobile_api.sh -r`.
 
 
 ### get_local_readers
@@ -87,7 +87,7 @@ To see what some of the data will look like, try running the tests found in
 ## Car/Tag/User APIs
 
 To test everything is running correctly, run the tests found in
-[test_user_car_tag_api.sh](../src/backend/test/test_user_car_tag_api.sh) using the command `bash src/backend/test/test_user_car_tag_api.sh -r`.
+[test_user_car_tag_api.sh](../../../backend/test/test_user_car_tag_api.sh) using the command `bash src/backend/test/test_user_car_tag_api.sh -r`.
 
 ### Adding a New User / Signup
 
@@ -114,7 +114,7 @@ To test everything is running correctly, run the tests found in
 - `password`: (str) The password associated with the username to login with
 - `rememberMe`: ('y' or 'n') 'y' if should save cookies/session data
 - **Note:** If you want to do certain actions (like adding a car) you need to be logged in and maintain your session key (usually stored in a cookies.txt file). You can login either via query params or a more secure form
-  - Logging in with curl is a bit more difficult than through the browser, but can be done as seen in [test_user_car_tag_api.sh](../src/backend/test/test_user_car_tag_api.sh) "Test 3"
+  - Logging in with curl is a bit more difficult than through the browser, but can be done as seen in [test_user_car_tag_api.sh](../../../backend/test/test_user_car_tag_api.sh) "Test 3"
 - For query param, login using the following curl command which saves your session data in `cookies.txt`
 ```bash
 curl -s \
