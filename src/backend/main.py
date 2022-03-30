@@ -211,7 +211,7 @@ class WebApp(UserManager):
             # fill in rest of return json if car completely detected and have all the info
             if(detect_res != None and detect_res['is_car_parked'] is True):
                 # car is detected as parked so mark in db
-                self._app.logger.debug("Calling add_detection_and_park_car(%s, %s, %s, %s)", (
+                print("Calling add_detection_and_park_car({0}, {1}, {2}, {3})".format(
                     detect_res['reader_id'],
                     detect_res['observation1_id'],
                     detect_res['observation2_id'],
