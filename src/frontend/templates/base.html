@@ -11,7 +11,8 @@
 
     <script src="../static/js/extern/jquery-3.5.1.min.js"></script>
     <script src="../static/js/navbar.js"></script>
-    {% block head %}{% endblock %} <!--Allow extenders to insert there own headers-->
+    {% block js_scripts %} {% endblock %} <!--Allow extenders to insert their own js code-->
+    {% block head %}{% endblock %} <!--Allow extenders to insert their own headers-->
 </head>
 
 {% block body %}
@@ -47,6 +48,13 @@
                             <div class="buttons">
                                 <a href="{{ url_for('api_md') }}" class="button is-link">
                                     API Docs
+                                </a>
+                            </div>
+                        </div>
+                        <div class="navbar-item">
+                            <div class="buttons">
+                                <a href="{{ url_for('add_car') }}" class="button is-link">
+                                    Add Car
                                 </a>
                             </div>
                         </div>

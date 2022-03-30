@@ -106,8 +106,16 @@ class DB_Manager(ReaderDBManager, MobileAppDBManager, DetectionAlgo):
             self.cursor.execute("call add_car(%s, %s, %s, %s)",
                 (user_id, front_tag, middle_tag, rear_tag))
 
+            add_car_res = list(self.cursor.fetchall())[0]
+            if 'Level' in add_car_res and add_car_res['Level'] == "Error":
+                print(f"mysql add_car() err: {add_car_res}")
+                return -1
+
+            # dict of one element & only care about value
+            add_car_id = list(add_car_res.values())[0]
+
             # ignore name of field and just get the value
-            return list(self.cursor.fetchall()[0].values())[0]
+            return add_car_id
         except Exception as err:
             print(f"add_car error: {err}")
             return -1
@@ -138,6 +146,16 @@ class DB_Manager(ReaderDBManager, MobileAppDBManager, DetectionAlgo):
             return list(self.cursor.fetchall()[0].values())[0]
         except Exception as err:
             print(f"does_username_exist error: {err}")
+            return -1
+
+    def does_real_tag_id_exist(self, real_tag_id : int) -> bool:
+        """:returns the true if this real tag id exists for at least one tag"""
+        self.check_conn()
+        try:
+            self.cursor.execute("select does_real_tag_id_exist(%s)", real_tag_id)
+            does_real_id_exist = list(self.cursor.fetchone().values())[0]
+            return does_real_id_exist
+        except:
             return -1
 
     def get_user_id(self, uname) -> int:

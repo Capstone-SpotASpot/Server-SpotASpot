@@ -370,6 +370,27 @@ END $$
 DELIMITER ;
 
 
+DROP FUNCTION IF EXISTS does_real_tag_id_exist;
+DELIMITER $$
+-- given: real_tag_id
+-- returns: If a tag exists with that real_tag_id
+CREATE FUNCTION does_real_tag_id_exist (real_tag_id_in INT)
+  RETURNS BOOLEAN
+  READS SQL DATA
+  DETERMINISTIC
+BEGIN
+  DECLARE real_tag_id_exists BOOLEAN;
+  set real_tag_id_exists = (
+    select count(*) > 0
+    from tag
+    where tag.real_tag_id = real_tag_id_in
+    group by tag.real_tag_id
+  );
+  return  real_tag_id_exists;
+END $$
+-- end of does_real_tag_id_exist
+DELIMITER ;
+
 -- ###### End of Functions ######
 
 

@@ -30,6 +30,7 @@ from flask_helpers import FlaskHelper, flash_print, is_json, is_form, is_static_
 from registrationForm import RegistrationForm
 from loginForm import LoginForm
 from forgotPasswordForm import ForgotPwdForm
+from addCarForm import AddCarForm
 
 class SendEventDataRes(TypedDict):
     is_car_parked: bool
@@ -369,8 +370,6 @@ class WebApp(UserManager):
             # on error, keep trying to login until correct
             return redirect(url_for("login"))
 
-
-
         @self._app.route("/user/get_id", methods=["GET"])
         @login_required
         def get_user_id():
@@ -477,8 +476,8 @@ class WebApp(UserManager):
                 created_tag_id = self.add_tag(tag_id)
             return {"new_tag_id": created_tag_id}
 
-        @self._app.route("/cars/add_car", methods=["POST"], defaults={'front_tag': None, 'middle_tag': None, 'rear_tag': None})
-        @self._app.route("/cars/add_car?front_tag=<front_tag>&middle_tag=<middle_tag>&rear_tag=<rear_tag>", methods=["POST"])
+        @self._app.route("/cars/add_car", methods=["POST", "GET"], defaults={'front_tag': None, 'middle_tag': None, 'rear_tag': None})
+        @self._app.route("/cars/add_car?front_tag=<front_tag>&middle_tag=<middle_tag>&rear_tag=<rear_tag>", methods=["POST", "GET"])
         @login_required
         def add_car(front_tag: int, middle_tag: int, rear_tag: int):
             args = request.args
@@ -487,15 +486,55 @@ class WebApp(UserManager):
             middle_tag = args.get("middle_tag")
             rear_tag = args.get("rear_tag")
 
-            # dont add reader if bad data
-            print("Adding car with tags ({}, {}, {})".format(
-                front_tag, middle_tag, rear_tag))
-            if user_id == None or front_tag == None or middle_tag == None or rear_tag == None:
-                new_car_id = -1
-            else:
-                new_car_id = self.add_car(user_id, front_tag, middle_tag, rear_tag)
+            is_form = len(request.form) > 0
 
-            return {"new_car_id": new_car_id}
+            if is_form:
+                add_car_form = AddCarForm(self._app, self, request.form)
+
+            if request.method == "POST":
+                if is_form and add_car_form.validate_on_submit():
+                    front_tag = add_car_form.front_tag.data
+                    middle_tag = add_car_form.middle_tag.data
+                    rear_tag = add_car_form.rear_tag.data
+                elif is_form:
+                    # flash_print(f"Add Car Fail! Bad form", "is-warning")
+                    front_tag = middle_tag = rear_tag = None
+                else:
+                    # make sure posting with normal method (not via form) still works
+                    args = request.args
+                    front_tag = args.get("front_tag")
+                    middle_tag = args.get("middle_tag")
+                    rear_tag = args.get("rear_tag")
+
+                # dont add tag if bad data
+                print("Adding car with tags ({}, {}, {})".format(
+                    front_tag, middle_tag, rear_tag))
+                if user_id == None or front_tag == None or middle_tag == None or rear_tag == None:
+                    new_car_id = -1
+                else:
+                    new_car_id = self.add_car(user_id, front_tag, middle_tag, rear_tag)
+
+                # if done through the webpage, redirect to a webpage with flash.
+                # Otherwise just return the car id
+                if not is_form:
+                    return {"new_car_id": new_car_id}
+                else:
+                    car_add_success = new_car_id > -1
+                    # Use a fresh form on success, the previous one otherwise
+                    if car_add_success is True:
+                        form=AddCarForm(self._app, self)
+                        form.front_tag.data = ""
+                        form.middle_tag.data = ""
+                        form.rear_tag.data = ""
+                        return render_template("add_car.html", title="Add Car", form=form, car_add_success=True)
+                    else:
+                        return render_template("add_car.html", title="Add Car", form=add_car_form, car_add_success=False)
+
+            elif request.method == "GET":
+                clear_flashes(session)
+                add_car_form = AddCarForm(self._app, self)
+                return render_template("add_car.html", title="Add Car", form=add_car_form, car_add_success=False)
+
 
 if __name__ == '__main__':
 
