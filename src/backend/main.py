@@ -98,7 +98,8 @@ class WebApp(UserManager):
     def createHelperRoutes(self):
         @self._app.before_request
         def log_request():
-            self._app.logger.info("Request: %s", request)
+            if "/static" not in request.headers:
+                self._app.logger.info("Request: %s", request)
             return None
 
     def createInfoRoutes(self):
