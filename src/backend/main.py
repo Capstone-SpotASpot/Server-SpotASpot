@@ -97,12 +97,17 @@ class WebApp(UserManager):
     def createHelperRoutes(self):
         @self._app.before_request
         def log_request():
+            if "/static" in request.url_rule.rule:
+                return None
             print("Request ({0}): {1}".format(
                 request.remote_addr, request))
             return None
 
         @self._app.after_request
         def log_response(response):
+            if "/static" in request.url_rule.rule:
+                return response
+
             res = response.data
             # check if is binary data
             try:
@@ -116,7 +121,8 @@ class WebApp(UserManager):
             print("Response ({0}) {1}: {2}".format(
                 request.remote_addr,
                 response,
-                res if is_json(res) else ""
+                # assume all return data is json format
+                res.strip() if is_json(res) else ""
             ))
             return response
 
