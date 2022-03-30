@@ -130,9 +130,10 @@ To test everything is running correctly, run the tests found in
 
 ### Adding a New Tag
 
-`http://71.167.9.86:31025/cars/add_tag`
+`http://71.167.9.86:31025/cars/?tag_id=<tag_id>`
 - adds a tag to the database (not associated with any car yet)
 - have to POST to it since changing state of system
+- `tag_id`: The real id in the tag when read
 - `returns`: {"new_tag_id": `int`}
-  - the id of the new tag
+  - the id of the new tag in the database system
 

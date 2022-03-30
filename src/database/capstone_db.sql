@@ -887,7 +887,7 @@ CREATE PROCEDURE cmp_observ_ev(
   IN observ_id_in INT
 ) BEGIN  -- use transaction bc multiple inserts and should rollback on error
   DECLARE rel_tag_id INT;
-  DECLARE reader_id INT;
+  DECLARE responsible_reader_id INT;
 
   DECLARE EXIT HANDLER FOR SQLEXCEPTION
   BEGIN
@@ -896,14 +896,20 @@ CREATE PROCEDURE cmp_observ_ev(
   END;
   START TRANSACTION;
 
+    SET responsible_reader_id = (
+      select observation_event.reader_seen_id
+      from observation_event
+      where observation_event.observation_id = observ_id_in
+    );
+
     -- get tag and reader id in one go and insert into variables
     -- CTL tables for main select
-    with tag_reader_info as (
+    with tag_reader_info (rel_tag_id, reader_id) as (
       select
         observation_event.tag_seen_id as rel_tag_id,
         observation_event.reader_seen_id as reader_id
       from observation_event
-      where observation_id = observ_id_in
+      where (observation_id = observ_id_in and is_relevant = 1)
     ),
     car_tags_info (car_id, car_tag, pos) as (
       select
@@ -941,7 +947,12 @@ CREATE PROCEDURE cmp_observ_ev(
       from reader_tag_car_cte
       left join observation_event
       on reader_tag_car_cte.reader_id = observation_event.reader_seen_id
-      where observation_event.is_relevant = 1
+      where (
+        observation_event.is_relevant = 1 and
+        observation_event.reader_seen_id = responsible_reader_id
+      )
+      -- grab latest observations when putting into detection
+      order by observation_event.observation_id desc
     ),
     get_observe_count_cte (reader_id, car_id, num_car_observations) as (
       select get_observations.reader_id,
