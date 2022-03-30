@@ -961,12 +961,12 @@ CREATE PROCEDURE cmp_observ_ev(
       from get_observations
       group by get_observations.car_id
     ),
-    -- Check if the car has >= 2 relevent observation events at same reader
+    -- Check if the car has >= 1 relevent observation events at same reader
     --      If true, return reader_id, 3 observation events, and car_id that is "parked"
     get_if_detected (reader_id, car_id, is_car_parked) as (
       select get_observe_count_cte.reader_id,
         get_observe_count_cte.car_id,
-        get_observe_count_cte.num_car_observations >= 2 as is_car_parked
+        get_observe_count_cte.num_car_observations >= 1 as is_car_parked
       from get_observe_count_cte
     ),
     -- add in the observation id's
@@ -1155,6 +1155,13 @@ CALL add_user(
 );
 SET @user2_id = LAST_INSERT_ID();
 
+-- TODO: real user for live car testing
+CALL add_user(
+  "capstone", "demo",
+  "demo_user", "demo_user_smart_auth"
+);
+SET @demo_user_id = LAST_INSERT_ID();
+
 -- add 6 tags (for 2 cars)
 CALL add_tag(1);
 SET @tag1_id = LAST_INSERT_ID();
@@ -1169,6 +1176,13 @@ SET @tag5_id = LAST_INSERT_ID();
 CALL add_tag(6);
 SET @tag6_id = LAST_INSERT_ID();
 
+-- TODO: these tags are the ones we are using for testing
+CALL add_tag(90); -- this one def exists
+SET @tag_id_real1 = LAST_INSERT_ID();
+CALL add_tag(91); -- TODO: check what this is supposed to be
+SET @tag_id_real2 = LAST_INSERT_ID();
+CALL add_tag(92); -- TODO: check what this is supposed to be
+SET @tag_id_real3 = LAST_INSERT_ID();
 
 -- add 2 cars
 CALL add_car(
@@ -1180,6 +1194,11 @@ CALL add_car(
   @tag5_id, @tag6_id
 );
 
+-- this is an actual car for testing
+CALL add_car(
+  @demo_user_id, @tag_id_real1,
+  @tag_id_real2, @tag_id_real3
+);
 
 -- add 3 observation event
 CALL add_observation(
