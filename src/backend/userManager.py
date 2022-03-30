@@ -9,7 +9,7 @@ import os
 
 #-----------------------------3RD PARTY DEPENDENCIES-----------------------------#
 # from werkzeug.contrib.securecookie import SecureCookie
-from flask import Flask, redirect
+from flask import Flask, redirect, url_for
 from flask_login import LoginManager
 
 #--------------------------------OUR DEPENDENCIES--------------------------------#
@@ -56,5 +56,5 @@ class UserManager(LoginManager, DB_Manager):
                 \n@Brief: VERY important callback that redirects the user to log in if needed --
                 gets triggered by "@login_required" if page is accessed without logging in
             """
-            return redirect("/login")
+            return redirect(url_for('login'))
 

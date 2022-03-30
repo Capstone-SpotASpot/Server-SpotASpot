@@ -14,7 +14,7 @@ def is_form(req: request) -> bool:
     return len(request.form) > 0
 
 def is_static_req(req: request) -> bool:
-    return "/static" in request.url_rule.rule
+    return req and req.url_rule and "/static" in req.url_rule.rule
 
 class FlaskHelper():
     def __init__(self, app: Flask, port: int):
