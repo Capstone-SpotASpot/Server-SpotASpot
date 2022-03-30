@@ -602,22 +602,51 @@ DELIMITER ;
 DROP PROCEDURE IF EXISTS handle_new_observ_ev;
 DELIMITER $$
 
-CREATE PROCEDURE handle_new_observ_ev (seen_car_id INT, new_observ_ev INT, seen_tag_id_in INT)
+CREATE PROCEDURE handle_new_observ_ev (
+  seen_car_id INT,
+  new_observ_ev INT,
+  seen_db_tag_id_in INT,
+  reader_id_in INT
+)
 BEGIN
-  DECLARE db_seen_tag_id INT;
+  DECLARE last_seen_car_id INT;
+  DECLARE is_seeing_same_car BOOLEAN;
   DECLARE EXIT HANDLER FOR SQLEXCEPTION
   BEGIN
     SHOW ERRORS;
   END;
 
-  set db_seen_tag_id = (select get_tag_id_from_real_tag(seen_tag_id_in));
+  -- check if seen car was detected elsewhere,
+  -- if so, need to invalidate all those observations
+  SET last_seen_car_id = (
+    select registered_cars.car_id
+    -- start from detects bc we know these observations point to a detection
+    from detects
+    -- always have at least one observation event to link to a car
+    join observation_event on observation_event.observation_id = detects.observation_event1_id
+    join registered_cars on registered_cars.front_tag = observation_event.tag_seen_id
+      or registered_cars.middle_tag = observation_event.tag_seen_id
+      or registered_cars.rear_tag = observation_event.tag_seen_id
+    where detects.detecting_reader_id = reader_id_in
+    order by detects.detection_id desc
+    limit 1
+  );
+  if last_seen_car_id != null
+  then
+    set is_seeing_same_car = (select last_seen_car_id = seen_car_id);
+  else
+    set is_seeing_same_car = 0;
+  end if;
 
   -- mark observes for with this tag belonging to the car & not seen by THIS reader to be irrelevant (except this one)
   with get_tag_ids (front_tag, middle_tag, rear_tag) as (
     -- should only return 1 row
     select front_tag, middle_tag, rear_tag
     from registered_cars
-    where car_id = seen_car_id
+    where (
+      -- get car ids for both current and past car
+      registered_cars.car_id = seen_car_id or registered_cars.car_id = last_seen_car_id
+    )
   )
 
   -- use the known observations to update relevance of tags associated with car if not seen by current reader
@@ -625,6 +654,9 @@ BEGIN
     join get_tag_ids on get_tag_ids.front_tag = observation_event.tag_seen_id
       or get_tag_ids.middle_tag = observation_event.tag_seen_id
       or get_tag_ids.rear_tag = observation_event.tag_seen_id
+    join registered_cars on registered_cars.front_tag = observation_event.tag_seen_id
+      or registered_cars.middle_tag = observation_event.tag_seen_id
+      or registered_cars.rear_tag = observation_event.tag_seen_id
   set is_relevant = 0
   where (
     -- same reader & same tag some time later (heartbeat) mark old one as irrelevant
@@ -632,7 +664,17 @@ BEGIN
     -- reduces to same-tag -> irrelevant
     observation_event.is_relevant = 1 and
     observation_event.observation_id != new_observ_ev and
-    observation_event.tag_seen_id = db_seen_tag_id
+    (
+      -- invalidate only THIS tag if seeing the same car
+      (is_seeing_same_car and observation_event.tag_seen_id = seen_db_tag_id_in)
+      or
+      -- invalidate all tags if not the same car
+      (!is_seeing_same_car and (
+          observation_event.tag_seen_id = seen_db_tag_id_in or
+          registered_cars.car_id = last_seen_car_id
+        )
+      )
+    )
   );
 
 END $$
@@ -686,7 +728,7 @@ CREATE PROCEDURE add_observation(
   else
     -- will be -1 if no car exists with those tags
     SET seen_car_id = (select get_car_id_from_tag(resolved_tag_id));
-    call handle_new_observ_ev(seen_car_id, created_observ_id, resolved_tag_id);
+    call handle_new_observ_ev(seen_car_id, created_observ_id, resolved_tag_id, reader_id_in);
   end if;
 
   -- select * from observation_event;
@@ -695,8 +737,10 @@ CREATE PROCEDURE add_observation(
 END $$
 -- end of add_observation
 DELIMITER ;
--- CALL add_observation("2022-02-06 10:20:30",13,2,4);
+-- CALL add_observation("2022-02-06 10:20:30",13,1,4);
+-- CALL add_observation("2022-02-06 10:20:30",13,1,5); -- should have enough info to make a detection at reader 1
 -- CALL add_observation("2022-02-06 10:20:30",13,1,-1); -- test clearing spot w/ -1
+--
 
 DROP PROCEDURE IF EXISTS add_detection_and_park_car;
 DELIMITER $$
@@ -932,6 +976,7 @@ END $$
 -- end of cmp_observ_ev
 -- resets the DELIMETER
 DELIMITER ;
+-- CALL cmp_observ_ev(4observation_event);
 
 DROP PROCEDURE IF EXISTS get_observ_id_from_parked_car;
 DELIMITER $$
