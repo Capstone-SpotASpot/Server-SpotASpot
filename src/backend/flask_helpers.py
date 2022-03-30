@@ -1,4 +1,5 @@
 from flask import Flask, url_for, flash, request
+from flask.globals import LocalProxy
 from werkzeug.routing import Rule
 from typing import List
 import json
