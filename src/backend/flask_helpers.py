@@ -16,6 +16,12 @@ def is_form(req: request) -> bool:
 def is_static_req(req: request) -> bool:
     return req and req.url_rule and "/static" in req.url_rule.rule
 
+def clear_flashes(session: LocalProxy) -> None:
+    """Clears existing flashes. Useful when going between pages.
+    \n:param session is implicitly defined in any view with @login_required"""
+    if '_flashes' in session:
+        session['_flashes'].clear()
+
 class FlaskHelper():
     def __init__(self, app: Flask, port: int):
         """Create this object after creating all flask routes"""

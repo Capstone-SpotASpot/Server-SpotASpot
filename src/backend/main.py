@@ -26,7 +26,7 @@ from flask_login import login_user, current_user, login_required, logout_user
 from user import User
 from userManager import UserManager
 from db_manager import DB_Manager
-from flask_helpers import FlaskHelper, flash_print, is_json, is_form, is_static_req
+from flask_helpers import FlaskHelper, flash_print, is_json, is_form, is_static_req, clear_flashes
 from registrationForm import RegistrationForm
 from loginForm import LoginForm
 from forgotPasswordForm import ForgotPwdForm
