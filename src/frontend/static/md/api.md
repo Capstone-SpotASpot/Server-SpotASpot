@@ -109,9 +109,42 @@ To test everything is running correctly, run the tests found in
 
 ### User Login
 
-`http://71.167.9.86:31025/user/login?username=<username>&pwd=<pwd>`
+`http://71.167.9.86:31025/user/login?username=<username>&password=<password>&rememberMe=<rememberMe>&csrf_token=<your csrf_token>`
 - `uname`: (str) The username to login with
-- `pwd`: (str) The password associated with the username to login with
+- `password`: (str) The password associated with the username to login with
+- `rememberMe`: ('y' or 'n') 'y' if should save cookies/session data
+- **Note:** If you want to do certain actions (like adding a car) you need to be logged in and maintain your session key (usually stored in a cookies.txt file). You can login either via query params or a more secure form
+  - Logging in with curl is a bit more difficult than through the browser, but can be done as seen in [test_user_car_tag_api.sh](../src/backend/test/test_user_car_tag_api.sh) "Test 3"
+- For query param, login using the following curl command which saves your session data in `cookies.txt`
+```bash
+curl -s \
+    --cookie "cookies.txt" \
+    --cookie-jar "cookies.txt" \
+    -X POST \
+    "$url/user/login?username=test_username&password=reset_pwd&rememberMe=true" \
+    --output /dev/null
+```
+- To login using the more secure form method you must submit the form data with a hidden csrf_token
+  - To get this token, you have to first GET request the login page and extract the csrf_token from the form
+  - Then when you POST to login, add `csrf_token=<your csrf_token>` to the data being sent in the request
+  - A quick and dirty way to accomplish this can be seen below
+```bash
+cookie="cookies.txt"
+csrf=$(curl -s \
+    -c $cookie \
+    --cookie-jar $cookie \
+    "$url/user/login" | grep csrf | \
+    python -c "import sys; s=sys.stdin.read(); x=s.split('value=\"')[1]; print(x.replace('\">', '').strip())"
+)
+curl -s \
+    --cookie $cookie \
+    --cookie-jar $cookie \
+    -X POST \
+    -H "Content-Type: application/x-www-form-urlencoded" \
+    -d "username=test_username&password=reset_pwd&rememberMe=true&csrf_token=${csrf}" \
+    "$url/user/login" \
+    --output /dev/null
+```
 
 ### Get User Id
 
@@ -127,6 +160,14 @@ To test everything is running correctly, run the tests found in
 - `front_tag`, `middle_tag`, `rear_tag` the id's of the 3 tags on the car (according to the database)
 - `returns`: {"new_car_id": `int`}
   - The id of the new car
+- Assuming you stored your session info in `cookies.txt` when you logged in...
+```bash
+curl \
+    --cookie "cookies.txt" \
+    --cookie-jar "cookies.txt" \
+    -X POST \
+    "$url/cars/add_car?user_id=<user_id>&front_tag=${tag1}&middle_tag=${tag2}&rear_tag=${tag3}"
+```
 
 ### Adding a New Tag
 

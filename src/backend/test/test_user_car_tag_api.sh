@@ -75,16 +75,24 @@ run_test "curl -s -X POST $url/user/signup?fname=test_fname&lname=test_lname&use
 echo "TEST 2 - Changing User Password"
 run_test "curl -s -X POST $url/user/forgot_password?uname=test_username&new_pwd=reset_pwd --output /dev/null"
 
-# --data-urlencode 'username=test_username' \
-# --data-urlencode 'pwd=reset_pwd' \
-# --data-urlencode 'rememberMe=true' \
 echo "TEST 3 - Logging in with User (using reset password)"
+echo "Fetching csrftoken to login with..."
+csrf=$(curl -s \
+    -c $cookie \
+    --cookie-jar $cookie \
+    "$url/user/login" | grep csrf | \
+    python -c "import sys; s=sys.stdin.read(); x=s.split('value=\"')[1]; print(x.replace('\">', '').strip())"
+)
+# NOTE: can also forgo the safe csrf token and just use
+# "$url/user/login"sername=test_username&password=reset_pwd&rememberMe=true"
 set -x # echo on (hard to multiline curl commands with run_test)
 curl -s \
     --cookie $cookie \
     --cookie-jar $cookie \
     -X POST \
-    "$url/user/login?username=test_username&pwd=reset_pwd&rememberMe=true" \
+    -H "Content-Type: application/x-www-form-urlencoded" \
+    -d "username=test_username&password=reset_pwd&rememberMe=true&csrf_token=${csrf}" \
+    "$url/user/login" \
     --output /dev/null
 set +x # echo off
 
