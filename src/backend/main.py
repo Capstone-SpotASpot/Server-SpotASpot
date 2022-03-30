@@ -297,9 +297,9 @@ class WebApp(UserManager):
 
     def createUserPages(self):
         # https://flask-login.readthedocs.io/en/latest/#login-example
-        @self._app.route("/user/login", methods=["GET", "POST"], defaults={'username': None, 'pwd': None, 'rememberMe': None})
-        @self._app.route("/user/login?username=<username>&pwd=<pwd>&rememberMe=<rememberMe>", methods=["GET", "POST"])
-        def login(username: str, pwd: str, rememberMe: bool):
+        @self._app.route("/user/login", methods=["GET", "POST"], defaults={'username': None, 'password': None, 'rememberMe': None})
+        @self._app.route("/user/login?username=<username>&password=<password>&rememberMe=<rememberMe>", methods=["GET", "POST"])
+        def login(username: str, password: str, rememberMe: bool):
             # dont login if already logged in
             if current_user.is_authenticated: return redirect(url_for('index'))
 
@@ -309,33 +309,38 @@ class WebApp(UserManager):
 
             def login_fail(msg=""):
                 flash_print(f'Invalid Username or Password!', "is-danger")
+                # print(msg)
                 return redirect(url_for('login'))
 
             username = None
-            pwd = None
+            password = None
             rememberMe = None
             if request.method == "GET":
                 return render_template("login.html", title="SpotASpot Login", form=form)
             elif request.method == "POST":
+                # print("Login Form Params: username = {0}, password = {1}, rememberMe={2}".format(
+                #     form.username.data, form.password.data, form.rememberMe.data
+                # ))
+
                 if is_form and form.validate_on_submit():
                     username = form.username.data
-                    pwd = form.password.data
+                    password = form.password.data
                     rememberMe = form.rememberMe.data
                 elif is_form:
                     # unsuccessful login
-                    return login_fail()
+                    return login_fail(msg="Failed to validate")
                 else:
                     # make sure posting with normal method (not via form) still works
                     args = request.args
                     username = args.get("username")
-                    pwd = args.get("pwd")
+                    password = args.get("password")
                     rememberMe = args.get("rememberMe")
-                    print("Login Params: username = {0}, pwd = {1}, rememberMe={2}".format(
-                        username, pwd, rememberMe
+                    print("Login Params: username = {0}, password = {1}, rememberMe={2}".format(
+                        username, password, rememberMe
                     ))
 
                     # verify valid login
-                    if(not self.check_password(username, pwd)):
+                    if(not self.check_password(username, password)):
                         # unsuccessful login
                         return login_fail()
 
