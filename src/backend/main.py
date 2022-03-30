@@ -26,7 +26,7 @@ from flask_login import login_user, current_user, login_required, logout_user
 from user import User
 from userManager import UserManager
 from db_manager import DB_Manager
-from flask_helpers import FlaskHelper, flash_print, is_json
+from flask_helpers import FlaskHelper, flash_print, is_json, is_form, is_static_req
 from registrationForm import RegistrationForm
 from loginForm import LoginForm
 from forgotPasswordForm import ForgotPwdForm
@@ -97,16 +97,17 @@ class WebApp(UserManager):
     def createHelperRoutes(self):
         @self._app.before_request
         def log_request():
-            if "/static" in request.url_rule.rule:
-                return None
-            print("Request ({0}): {1}".format(
-                request.remote_addr, request))
+            if is_static_req(request): return None
+            print("Request ({0}): {1} -- {2}".format(
+                request.remote_addr,
+                request,
+                request.form if is_form(request) else ""
+            ))
             return None
 
         @self._app.after_request
         def log_response(response):
-            if "/static" in request.url_rule.rule:
-                return response
+            if is_static_req(request): return response
 
             res = response.data
             # check if is binary data

@@ -1,4 +1,4 @@
-from flask import Flask, url_for, flash
+from flask import Flask, url_for, flash, request
 from werkzeug.routing import Rule
 from typing import List
 import json
@@ -9,6 +9,12 @@ def is_json(myjson) -> bool:
     except ValueError as e:
         return False
     return True
+
+def is_form(req: request) -> bool:
+    return len(request.form) > 0
+
+def is_static_req(req: request) -> bool:
+    return "/static" in request.url_rule.rule
 
 class FlaskHelper():
     def __init__(self, app: Flask, port: int):
