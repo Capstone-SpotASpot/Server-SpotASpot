@@ -9,7 +9,7 @@ Authors:
 
 ## Server Web Application APIs
 
-see [api.md](./docs/api.md) for routes to interact with web-app database interface
+see [api.md](./src/frontend/static/md/api.md) for routes to interact with web-app database interface
 
 
 ## Creating and Running the Project
