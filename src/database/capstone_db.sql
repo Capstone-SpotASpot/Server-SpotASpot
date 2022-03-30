@@ -620,15 +620,15 @@ BEGIN
   -- if so, need to invalidate all those observations
   SET last_seen_car_id = (
     select registered_cars.car_id
-    -- start from detects bc we know these observations point to a detection
-    from detects
-    -- always have at least one observation event to link to a car
-    join observation_event on observation_event.observation_id = detects.observation_event1_id
+    from observation_event
     join registered_cars on registered_cars.front_tag = observation_event.tag_seen_id
       or registered_cars.middle_tag = observation_event.tag_seen_id
       or registered_cars.rear_tag = observation_event.tag_seen_id
-    where detects.detecting_reader_id = reader_id_in
-    order by detects.detection_id desc
+    where observation_event.reader_seen_id = reader_id_in and
+          observation_event.observation_id != new_observ_ev and
+          registered_cars.car_id != seen_car_id
+    -- descending order to get most recent observation
+    order by observation_event.observation_id desc
     limit 1
   );
   if last_seen_car_id != null
