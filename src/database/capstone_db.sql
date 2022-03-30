@@ -1163,28 +1163,29 @@ CALL add_user(
 SET @demo_user_id = LAST_INSERT_ID();
 
 -- add 6 tags (for 2 cars)
-CALL add_tag(1);
-SET @tag1_id = LAST_INSERT_ID();
-CALL add_tag(2);
-SET @tag2_id = LAST_INSERT_ID();
-CALL add_tag(3);
-SET @tag3_id = LAST_INSERT_ID();
-CALL add_tag(4);
-SET @tag4_id = LAST_INSERT_ID();
-CALL add_tag(5);
-SET @tag5_id = LAST_INSERT_ID();
-CALL add_tag(6);
-SET @tag6_id = LAST_INSERT_ID();
+-- These tag id's are the real tag's numbers which is what the users use when itnerfacing with database
+SET @tag1_id = 1;
+SET @tag2_id = 2;
+SET @tag3_id = 3;
+SET @tag4_id = 4;
+SET @tag5_id = 5;
+SET @tag6_id = 6;
+CALL add_tag(@tag1_id);
+CALL add_tag(@tag2_id);
+CALL add_tag(@tag3_id);
+CALL add_tag(@tag4_id);
+CALL add_tag(@tag5_id);
+CALL add_tag(@tag6_id);
 
 -- TODO: these tags are the ones we are using for testing
-CALL add_tag(90); -- this one def exists
-SET @tag_id_real1 = LAST_INSERT_ID();
-CALL add_tag(91); -- TODO: check what this is supposed to be
-SET @tag_id_real2 = LAST_INSERT_ID();
-CALL add_tag(92); -- TODO: check what this is supposed to be
-SET @tag_id_real3 = LAST_INSERT_ID();
+SET @demo_tag_id1 = 90; -- this one def exists
+SET @demo_tag_id2 = 91; -- TODO: check what this is supposed to be
+SET @demo_tag_id3 = 92; -- TODO: check what this is supposed to be
+CALL add_tag(@demo_tag_id1);
+CALL add_tag(@demo_tag_id2);
+CALL add_tag(@demo_tag_id3);
 
--- add 2 cars
+-- add cars
 CALL add_car(
   @user1_id, @tag1_id,
   @tag2_id, @tag3_id
@@ -1196,8 +1197,8 @@ CALL add_car(
 
 -- this is an actual car for testing
 CALL add_car(
-  @demo_user_id, @tag_id_real1,
-  @tag_id_real2, @tag_id_real3
+  @demo_user_id, @demo_tag_id1,
+  @demo_tag_id2, @demo_tag_id3
 );
 
 -- add 3 observation event
