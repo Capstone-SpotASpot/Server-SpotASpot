@@ -163,7 +163,7 @@ CREATE TABLE detects
     detecting_reader_id INT NOT NULL,
     -- it takes 3 tags to make the observation - a full car
     observation_event1_id INT NOT NULL,
-    observation_event2_id INT NOT NULL,
+    observation_event2_id INT NULL,
 
     -- the 3rd one CAN be NULL. i.e. a detection can be made after only 2 tags are seen
     observation_event3_id INT NULL,
@@ -817,6 +817,59 @@ CREATE PROCEDURE add_detection_and_park_car(
   update parking_spot
     set parking_spot.parked_car_id = parked_car_id_p
     where parked_spot_id = parking_spot.spot_id;
+
+  -- for the delete - needed for errors
+  SET SQL_SAFE_UPDATES = 0;
+  
+  -- get all tags from the car that is parked
+  with get_tag_ids (front_tag, middle_tag, rear_tag) as (
+    -- should only return 1 row
+    select front_tag, middle_tag, rear_tag
+    from registered_cars
+    where (
+      registered_cars.car_id = parked_car_id_p
+    )
+    limit 1
+  ),
+
+  -- these are observations with any of those 3 tags NOT at the detecting reader
+  get_observations_from_tags (observation_id) as (
+    select observation_event.observation_id
+    from observation_event
+    join get_tag_ids
+    on (
+      observation_event.tag_seen_id = get_tag_ids.front_tag
+      or
+      observation_event.tag_seen_id = get_tag_ids.middle_tag
+      or
+      observation_event.tag_seen_id = get_tag_ids.rear_tag
+    )
+    where 
+        observation_event.observation_id != observation_event1_id_in
+        or
+        observation_event.observation_id != observation_event2_id_in
+        or
+        observation_event.observation_id != observation_event3_id_in
+  )
+
+  delete observation
+  from observation_event observation
+  join get_tag_ids
+    on (
+      observation.tag_seen_id = get_tag_ids.front_tag
+      or
+      observation.tag_seen_id = get_tag_ids.middle_tag
+      or
+      observation.tag_seen_id = get_tag_ids.rear_tag
+  )
+  where (
+        observation.observation_id != observation_event1_id_in
+        or
+        observation.observation_id != observation_event2_id_in
+        or
+        observation.observation_id != observation_event3_id_in);
+  -- safetly turn it back on
+  SET SQL_SAFE_UPDATES = 1;
 
 
   SELECT created_detect_id as 'created_detect_id',
