@@ -31,6 +31,7 @@ from registrationForm import RegistrationForm
 from loginForm import LoginForm
 from forgotPasswordForm import ForgotPwdForm
 from addCarForm import AddCarForm
+from addTagForm import AddTagForm
 
 class SendEventDataRes(TypedDict):
     is_car_parked: bool
@@ -465,16 +466,49 @@ class WebApp(UserManager):
 
 
     def createCarRoutes(self):
-        @self._app.route("/cars/add_tag", methods=["POST"], defaults={"tag_id": None})
-        @self._app.route("/cars/add_tag?tag_id=<tag_id>", methods=["POST"])
+        @self._app.route("/cars/add_tag", methods=["POST", "GET"], defaults={"tag_id": None})
+        @self._app.route("/cars/add_tag?tag_id=<tag_id>", methods=["POST", "GET"])
         def add_tag(tag_id: int):
             """Returns the newly created tag's id"""
-            args = request.args
-            tag_id = args.get("tag_id")
-            created_tag_id = None
-            if tag_id is not None:
-                created_tag_id = self.add_tag(tag_id)
-            return {"new_tag_id": created_tag_id}
+            if request.method == "POST":
+                args = None
+                tag_id = None
+
+                is_form = len(request.form) > 0
+
+                if is_form:
+                    add_tag_form = AddTagForm(self._app, request.form)
+
+                if is_form and add_tag_form.validate_on_submit():
+                    tag_id = add_tag_form.tag_id.data
+                elif is_form:
+                    # flash_print(f"Add Tag Fail! Bad form", "is-warning")
+                    tag_id = None
+                else:
+                    # make sure posting with normal method (not via form) still works
+                    args = request.args
+                    tag_id = args.get("tag_id")
+
+                # dont add the tag if the data is bad
+                created_tag_id = None
+                print(f"Adding New Tag with real id : {tag_id}")
+
+                if tag_id is not None:
+                    created_tag_id = self.add_tag(tag_id)
+
+                # how the return gets handled depends if a form or curl was used
+                if not is_form:
+                    return {"new_tag_id": created_tag_id}
+                else:
+                    # make a fresh form to use for the page
+                    fresh_form=AddTagForm(self._app)
+                    fresh_form.tag_id.data = ""
+                    return render_template("add_tag.html", title="Add Car", form=fresh_form, tag_add_success=True)
+
+            elif request.method == "GET":
+                clear_flashes(session)
+                add_tag_form = AddTagForm(self._app)
+                return render_template("add_tag.html", title="Add New Tag", form=add_tag_form, tag_add_success=False)
 
         @self._app.route("/cars/add_car", methods=["POST", "GET"], defaults={'front_tag': None, 'middle_tag': None, 'rear_tag': None})
         @self._app.route("/cars/add_car?front_tag=<front_tag>&middle_tag=<middle_tag>&rear_tag=<rear_tag>", methods=["POST", "GET"])
