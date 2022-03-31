@@ -3,14 +3,14 @@
 <head>
 
     {% block js_scripts %}
-    <script src="../static/js/add_car.js"></script>
+    <script src="../static/js/form_alert.js"></script>
     {% endblock %}
 </head>
 
 <body>
     {% block content %}
         <!-- Check if this page is returned to AFTER adding a car -->
-        <div  id="successful-car-add-val"  hidden style="display: none;">
+        <div id="form_success"  hidden style="display: none;">
             {{ car_add_success }}
         </div>
             <!-- <input type="button" id="successful-car-add" hidden style="display: none;"> -->
