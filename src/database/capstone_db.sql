@@ -1213,13 +1213,13 @@ DELIMITER ;
 -- reader coverage is handled by other insert procedures
 
 -- add 2 spots
-CALL add_spot(42.341026, -71.091102); -- between reader 1 & 2
-CALL add_spot(42.340993, -71.091123); -- between reader 1 & 2
-CALL add_spot(42.341339, -71.090871); -- nearby reader 3
+CALL add_spot(42.337864, -71.086680); -- near reader 1
+CALL add_spot(42.340993, -71.091123); -- near reader 2
+CALL add_spot(42.341339, -71.090871); -- near reader 3
 
 -- add 3 readers (1 will be super far away to "reset" car position)
-CALL add_reader(42.340989, -71.091054, 15, 288);
-SET @reader_1_id = (SELECT get_reader_id_from_coords(42.340989, -71.091054));
+CALL add_reader(42.337864, -71.086678, 15, 288); -- DEMO READER
+SET @reader_1_id = (SELECT get_reader_id_from_coords(42.337864, -71.086678));
 CALL add_reader(42.341061, -71.091008, 15, 287);
 SET @reader_2_id = (SELECT get_reader_id_from_coords(42.341061, -71.091008));
 CALL add_reader(42.341311, -71.090847, 15, 287); -- far enough away (~100ft ~= 30m)
@@ -1264,10 +1264,10 @@ CALL add_tag(@tag4_id);
 CALL add_tag(@tag5_id);
 CALL add_tag(@tag6_id);
 
--- TODO: these tags are the ones we are using for testing
-SET @demo_tag_id1 = 90; -- this one def exists
-SET @demo_tag_id2 = 91; -- TODO: check what this is supposed to be
-SET @demo_tag_id3 = 92; -- TODO: check what this is supposed to be
+-- these are the demo tags that we are using for testing
+SET @demo_tag_id1 = 42;
+SET @demo_tag_id2 = 74;
+SET @demo_tag_id3 = 58;
 CALL add_tag(@demo_tag_id1);
 CALL add_tag(@demo_tag_id2);
 CALL add_tag(@demo_tag_id3);
