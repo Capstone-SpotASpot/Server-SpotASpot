@@ -1264,13 +1264,22 @@ CALL add_tag(@tag4_id);
 CALL add_tag(@tag5_id);
 CALL add_tag(@tag6_id);
 
--- these are the demo tags that we are using for testing
+-- these are the car demo tags that we are using for testing
 SET @demo_tag_id1 = 42;
 SET @demo_tag_id2 = 74;
 SET @demo_tag_id3 = 58;
 CALL add_tag(@demo_tag_id1);
 CALL add_tag(@demo_tag_id2);
 CALL add_tag(@demo_tag_id3);
+
+-- these are the presentation demo tags w/ no car
+SET @demo_tag_id4 = 90; -- this is tag on the ruler
+SET @demo_tag_id5 = 91; -- change this
+SET @demo_tag_id6 = 92; -- change this
+CALL add_tag(@demo_tag_id4);
+CALL add_tag(@demo_tag_id5);
+CALL add_tag(@demo_tag_id6);
+
 
 -- add cars
 CALL add_car(
@@ -1287,6 +1296,13 @@ CALL add_car(
   @demo_user_id, @demo_tag_id1,
   @demo_tag_id2, @demo_tag_id3
 );
+
+-- this the presentation demo car (aka on the slider)
+CALL add_car(
+  @demo_user_id, @demo_tag_id4,
+  @demo_tag_id5, @demo_tag_id6
+);
+
 
 -- add 3 observation event
 CALL add_observation(
