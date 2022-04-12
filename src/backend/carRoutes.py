@@ -10,6 +10,7 @@ from flask_login import current_user, login_required
 from userManager import UserManager
 
 #--------------------------------Project Includes--------------------------------#
+from flask_helpers import flash_print, is_form, clear_flashes
 from addCarForm import AddCarForm
 from addTagForm import AddTagForm
 
@@ -85,7 +86,7 @@ class CarRoutes():
             is_form = len(request.form) > 0
 
             if is_form:
-                add_car_form = AddCarForm(self.app, self, request.form)
+                add_car_form = AddCarForm(self.app, self.user_manager, request.form)
 
             if request.method == "POST":
                 if is_form and add_car_form.validate_on_submit():
@@ -118,7 +119,7 @@ class CarRoutes():
                     car_add_success = new_car_id > -1
                     # Use a fresh form on success, the previous one otherwise
                     if car_add_success is True:
-                        form=AddCarForm(self.app, self)
+                        form=AddCarForm(self.app, self.user_manager)
                         form.front_tag.data = ""
                         form.middle_tag.data = ""
                         form.rear_tag.data = ""
@@ -128,5 +129,5 @@ class CarRoutes():
 
             elif request.method == "GET":
                 clear_flashes(session)
-                add_car_form = AddCarForm(self.app, self)
+                add_car_form = AddCarForm(self.app, self.user_manager)
                 return render_template("add_car.html", title="Add Car", form=add_car_form, car_add_success=False)

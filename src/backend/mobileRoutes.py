@@ -4,6 +4,7 @@
 #------------------------------STANDARD DEPENDENCIES-----------------------------#
 
 #-----------------------------3RD PARTY DEPENDENCIES-----------------------------#
+import flask
 from flask import Flask, session, render_template, request, redirect, flash, url_for, jsonify
 from userManager import UserManager
 
@@ -29,13 +30,13 @@ class MobileRoutes():
         @self.app.route("/mobile/get_spot_coord/<int:spot_id>", methods=["GET"])
         def get_coord_from_spot_id(spot_id: int):
             """:returns {latitude: float, longitude: float}"""
-            return self.self.user_manager.get_coord_from_spot_id(spot_id)
+            return self.user_manager.get_coord_from_spot_id(spot_id)
 
         @self.app.route("/mobile/get_is_spot_taken/<int:reader_id>")
         def get_is_spot_taken(reader_id: int) -> bool:
             """Given a reader_id, returns the status of the spots it can reach.
             :return {<spot_id>: <status>, <spot_id>: <status>}"""
-            return flask.jsonify(self.self.user_manager.is_spot_taken(reader_id))
+            return flask.jsonify(self.user_manager.is_spot_taken(reader_id))
 
         @self.app.route("/mobile/get_local_readers", methods=["GET"], defaults={'radius': None, 'latitude': None, 'longitude': None})
         @self.app.route("/mobile/get_local_readers?radius=<radius>&latitude=<latitude>&longitude=<longitude>", methods=["GET"])
@@ -57,7 +58,7 @@ class MobileRoutes():
             if radius is not None and center_latitude is not None and center_longitude is not None:
                 # only return the reader's id and their gps coords that match
                 return flask.jsonify(
-                    self.self.user_manager.get_readers_in_radius(
+                    self.user_manager.get_readers_in_radius(
                         center_latitude,
                         center_longitude,
                         radius
