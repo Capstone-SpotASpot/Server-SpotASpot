@@ -20,6 +20,28 @@ const create_map = async (lat, long) => {
         gestureHandling: "passive",
     });
 
+    // https://developers.google.com/maps/documentation/javascript/style-reference
+    const custom_style = [
+        {
+            featureType: "all",
+            elementType: "labels",
+            stylers: [
+                { visibility: "off" }
+            ],
+        },
+        {
+            featureType: "poi.school",
+            elementType: "labels",
+            stylers: [
+            { visibility: "on" }
+            ],
+        },
+    ]
+
+    map.set('styles', custom_style);
+
+    console.log(map)
+
   const iconBase =
     "https://developers.google.com/maps/documentation/javascript/examples/full/images/";
 
@@ -32,6 +54,7 @@ const create_map = async (lat, long) => {
     // NOTE: radius is large, but on day of pres can make it small around Ell Hall
     const get_reader_url = `/mobile/get_local_readers?radius=${10000}&latitude=${lat}&longitude=${long}`;
     const readers = await async_get_request(get_reader_url, {});
+
 
     // add marker for each parking spot
     const features = readers.map( (lat_long_json) => {
