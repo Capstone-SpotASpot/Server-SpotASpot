@@ -2,8 +2,10 @@
 import { async_get_request } from './utils.js';
 
 $(document).ready(async function() {
+    const coords = await get_gps_coords();
 
-    // initMap();
+    // update it every 2 sec
+    window.setInterval(() => update_markers(coords.lat, coords.long, 10000), 2000);
 });
 
 
@@ -16,12 +18,10 @@ const icons = {
     }
 };
 
-// key = spot id
-const parking_spots = {};
+let markers = [];
 
 export const initMap = async () => {
     const coords = await get_gps_coords();
-    console.log(`my (lat, long): (${coords.lat}, ${coords.long})`)
     create_map(coords.lat, coords.long);
 }
 
@@ -50,11 +50,21 @@ const create_map = async (lat, long) => {
         },
     ]
 
+    await update_markers(lat, long, 10000, map);
     map.set('styles', custom_style);
 
+}
+
+/**
+ * @brief Updates the markers on the map for all of the parking spots around the coords given and radius
+ */
+const update_markers = async (lat, long, radius, map) =>
+{
     // NOTE: radius is large, but on day of pres can make it small around Ell Hall
-    const get_reader_url = `/mobile/get_local_readers?radius=${10000}&latitude=${lat}&longitude=${long}`;
+    const get_reader_url = `/mobile/get_local_readers?radius=${radius}&latitude=${lat}&longitude=${long}`;
     const readers = await async_get_request(get_reader_url, {});
+
+    let parking_spots = {};
 
     // const parking_spots = [];
     for (const reader of readers)
@@ -70,8 +80,8 @@ const create_map = async (lat, long) => {
             const cur_marker = {
                 position: new google.maps.LatLng(spot.latitude, spot.longitude),
                 type: type,
+                spot_id: spot_id
             }
-            // parking_spots.push(cur_marker);
             parking_spots[spot_id] = cur_marker;
         }
     }
@@ -79,22 +89,27 @@ const create_map = async (lat, long) => {
     // actually generate the markers
     for(const spot of Object.values(parking_spots))
     {
-        const marker = new google.maps.Marker({
-            position: spot.position,
-            icon: icons[spot.type].icon,
-            map: map,
-        })
+        // find the marker for this spot and update when it exists, create otherwise
+        const marker_idx = get_marker_idx_for_spot(spot.spot_id);
+
+        if(marker_idx == -1)
+        {
+            const marker = new google.maps.Marker({
+                position: spot.position,
+                icon: icons[spot.type].icon,
+                map: map,
+                spot_id: spot.spot_id
+            });
+            markers.push(marker);
+        }
+        // just update markers based on if their spot id is correct
+        else{
+            markers[marker_idx].icon = icons[spot.type].icon;
+            markers[marker_idx].setIcon(icons[spot.type].icon);
+        }
+
     };
 
-}
-
-/**
- * @brief Given a JSON of parking spots statuses from the /mobile/get_is_spot_taken route,
- * updates the markers on the map
- * @param {Array} parking_spots The parking spots to check the status of
- */
-const update_markers = async (parking_spots) =>
-{
 }
 
 /**
@@ -121,6 +136,20 @@ const get_gps_coords = async () =>
         long: pos.coords.longitude,
         lat: pos.coords.latitude,
     };
+}
+
+
+// Returns the idx in markers for the given spot. -1 on failure
+function get_marker_idx_for_spot(spot_id)
+{
+    for(let idx = 0; idx < markers.length; idx++)
+    {
+        if(markers[idx].spot_id == spot_id)
+        {
+            return idx;
+        }
+    }
+    return -1;
 }
 
 // required explicit export for google maps api
