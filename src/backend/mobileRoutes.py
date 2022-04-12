@@ -23,6 +23,7 @@ class MobileRoutes():
         self.app = app
         self.user_manager = user_manager
         self.createMobileRoutes()
+        self.createMapRoutes()
 
     def createMobileRoutes(self):
         """All routes requests from the Mobile App"""
@@ -66,3 +67,9 @@ class MobileRoutes():
                 )
             else:
                 return "Parameters are missing\n"
+
+    def createMapRoutes(self):
+        """Creates all routes related to showinng the map"""
+        @self.app.route("/mobile/map", methods=["GET"])
+        def map():
+            return render_template("map.html", title="Spot Availability Map")
