@@ -2,30 +2,20 @@
 
 #------------------------------STANDARD DEPENDENCIES-----------------------------#
 import os, sys
-import webbrowser # allows opening of new tab on start
 import argparse # cli paths
 import logging # used to disable printing of each POST/GET request
-import pathlib
 from pathlib import Path
 import secrets
 import getpass
-from datetime import  datetime
 from typing import TypedDict, List, Tuple
 
 #-----------------------------3RD PARTY DEPENDENCIES-----------------------------#
-import flask
 from flask import Flask, session, render_template, request, redirect, flash, url_for, jsonify
 import werkzeug.serving # needed to make production worthy app that's secure
 
-# decorate app.route with "@login_required" to make sure user is logged in before doing anything
-# https://flask-login.readthedocs.io/en/latest/#flask_login.LoginManager.user_loader -- "flask_login.login_required"
-from flask_login import login_user, current_user, login_required, logout_user
-
-
 #--------------------------------Project Includes--------------------------------#
-from userManager import UserManager
-from db_manager import DB_Manager
 from flask_helpers import FlaskHelper, flash_print, is_json, is_form, is_static_req, clear_flashes
+from userManager import UserManager
 from userRoutes import UserRoutes
 from mobileRoutes import MobileRoutes
 from readerRoutes import ReaderRoutes
