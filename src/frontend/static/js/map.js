@@ -40,15 +40,17 @@ const create_map = async (lat, long) => {
 
     map.set('styles', custom_style);
 
-    console.log(map)
 
   const iconBase =
     "https://developers.google.com/maps/documentation/javascript/examples/full/images/";
 
     const icons = {
-        parking: {
-            icon: iconBase + "parking_lot_maps.png",
+        taken: {
+            icon: "/static/images/parking_spot_taken.png"
         },
+        free: {
+            icon: "/static/images/parking_spot_free.png"
+        }
     };
 
     // NOTE: radius is large, but on day of pres can make it small around Ell Hall
@@ -56,16 +58,28 @@ const create_map = async (lat, long) => {
     const readers = await async_get_request(get_reader_url, {});
 
 
-    // add marker for each parking spot
-    const features = readers.map( (lat_long_json) => {
-        return {
-            position: new google.maps.LatLng(lat_long_json.latitude, lat_long_json.longitude),
-            type: "parking"
-        };
-    });
+
+    const parking_spots = [];
+    for (const reader of readers)
+    {
+        const get_spot_status_url = `/mobile/get_is_spot_taken/${reader.reader_id}`
+        const spot_statuses = await async_get_request(get_spot_status_url, {});
+
+
+        for(const spot of Object.values(spot_statuses))
+        {
+            // process each spot seen by a reader
+            const type = spot.is_spot_taken ? "taken" : "free";
+            const cur_marker = {
+                position: new google.maps.LatLng(spot.latitude, spot.longitude),
+                type: type
+            }
+            parking_spots.push(cur_marker);
+        }
+    }
 
     // actually generate the markers
-    for(const feat of features)
+    for(const feat of parking_spots)
     {
         const marker = new google.maps.Marker({
             position: feat.position,
