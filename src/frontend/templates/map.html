@@ -1,11 +1,18 @@
 {% extends "base.html" %}
 
-{% block js_scripts %}
-<script src="../static/js/map.js"></script>
-{% endblock %}
-
-<body>
-    {% block content %}
-        <div id="map"></div>
+<head>
+    {% block js_scripts %}
+        <script src="https://polyfill.io/v3/polyfill.min.js?features=default"></script>
+        <script src="/static/js/map.js" type="module"></script>
+        <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDrl68Kcn-vyePPEx8Cfyx1AvFtw8AGBvA&callback=initMap" ></script>
     {% endblock %}
-</body>
+</head>
+
+{% block content %}
+    <div class="column">
+        <div class="box">
+            <div id="map"></div>
+        </div>
+    </div>
+    <!-- <div id="map" style="height:80vh"></div> -->
+{% endblock %}
