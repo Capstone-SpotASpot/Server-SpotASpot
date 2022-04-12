@@ -630,6 +630,13 @@ BEGIN
     observation_event.observation_id != empty_observ_ev
   );
 
+  -- mark any spot it sees as empty (null for car id)
+  update parking_spot
+    join reader_coverage
+    on reader_coverage.spot_covered_id = parking_spot.spot_id
+    set parking_spot.parked_car_id = null
+    where reader_coverage.covering_reader_id = reader_id_in;
+
 END $$
 -- end of handle_empty_observ_ev
 -- resets the DELIMETER
