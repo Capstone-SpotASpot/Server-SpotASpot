@@ -32,6 +32,31 @@
     }
 }
 
+export async function async_get_request(url, data_json) {
+    let res = null;
+    try{
+        res = await $.get({
+            url: url,
+            data: JSON.stringify(data_json),
+            contentType: 'application/json',
+
+        });
+    }catch (error){
+        console.log("Get request for url " + url + ' failed');
+        console.log(JSON.stringify(error));
+        res = 'err';
+        return res;
+    }
+
+    // try parsing (what should be) a json
+    try{
+        return JSON.parse(res);
+    }catch (error){
+        // In this case, we did not receive a valid json
+        return res;
+    }
+}
+
 export function getTodayDate()
 {
     // Inspired by https://stackoverflow.com/a/12347050/14810215
