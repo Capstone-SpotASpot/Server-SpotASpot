@@ -104,7 +104,6 @@ class MobileAppDBManager():
         """Given a set of coordinates, finds all readers with a given GPS distance (radius) from that point """
         self.db_start_cb()
         try:
-            pass
             self.cursor.execute("call get_readers_in_radius(%s, %s, %s)",
                                 (center_latitude, center_longitude, radius))
             readers_in_range_dict = self.cursor.fetchall()
