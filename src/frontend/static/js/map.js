@@ -1,5 +1,5 @@
 "use strict";
-import { async_get_request } from './utils.js';
+import { async_get_request, async_post_request } from './utils.js';
 
 $(document).ready(async function() {
     const coords = await get_gps_coords();
@@ -112,6 +112,53 @@ const update_markers = async (lat, long, radius, map) =>
 
 }
 
+
+/**
+ * @returns {{
+ *    coords: {
+ *        latitude: Number,
+ *        longitude: Number,
+ *    }
+ * }}
+ */
+const get_gps_coord_http = async () => {
+    const coords_ret = {
+        "coords": {
+            "latitude": null,
+            "longitude": null
+        }
+    }
+
+    let raw_coords = null
+    try {
+        raw_coords = await $.get("http://ip-api.com/json")
+    } catch (err) {
+        console.log(`Failed to query google for coords: ${err}`)
+        return coords_ret
+    }
+
+    if (raw_coords) {
+        coords_ret.coords.latitude = raw_coords.lat
+        coords_ret.coords.longitude = raw_coords.lon
+    } else {
+        // const conv_url = `http://maps.googleapis.com/maps/api/geocode/json?address=${raw_coords.zip}`
+        // try {
+        //     const coord_convert = await $.get(conv_url)
+        //     console.log(coord_convert)
+        //     if(coord_convert) {
+        //         coords_ret.coords.latitude = coord_convert.results[0].geometry.location.lat
+        //         coords_ret.coords.longitude = coord_convert.results[0].geometry.location.lng
+        //     }
+        // }
+        // catch (err) {
+        //     console.log(`Failed to query/read google for coords: ${err}`)
+        //     return coords_ret
+        // }
+    }
+
+    return coords_ret
+}
+
 /**
  *
  * @returns {{
@@ -128,13 +175,23 @@ const get_gps_coords = async () =>
     };
 
     // Try to await the request
-    const pos = await new Promise((resolve, reject) =>{
-        navigator.geolocation.getCurrentPosition(resolve, reject, options);
+    const pos = await new Promise( async (resolve, reject) =>{
+        if (location.protocol === "https:") {
+            navigator.geolocation.getCurrentPosition(resolve, reject, options);
+        } else {
+            try {
+                const http_coords = await get_gps_coord_http()
+                resolve(http_coords)
+            } catch (err) {
+                reject(err)
+            }
+
+        }
     });
 
     return {
-        long: pos.coords.longitude,
         lat: pos.coords.latitude,
+        long: pos.coords.longitude,
     };
 }
 
