@@ -4,7 +4,8 @@
 #------------------------------STANDARD DEPENDENCIES-----------------------------#
 
 #-----------------------------3RD PARTY DEPENDENCIES-----------------------------#
-from flask import Flask, render_template, request, redirect, flash, url_for, jsonify
+import flask
+from flask import Flask, session, render_template, request, redirect, flash, url_for, jsonify
 from flask_login import login_user, current_user, login_required, logout_user
 
 
@@ -23,6 +24,7 @@ class UserRoutes():
 
         Args:
             app (Flask): An existing flask app to extend
+            user_manager (UserManager): The user manager class containing references to the db
         """
         self.app = app
         self.user_manager = user_manager

@@ -29,6 +29,7 @@ from flask_helpers import FlaskHelper, flash_print, is_json, is_form, is_static_
 from addCarForm import AddCarForm
 from addTagForm import AddTagForm
 from userRoutes import UserRoutes
+from mobileRoutes import MobileRoutes
 
 class SendEventDataRes(TypedDict):
     is_car_parked: bool
@@ -90,7 +91,7 @@ class WebApp(UserManager):
         # to provide UserManager & DB_manager, use self which is a child of it
         self.user_routes = UserRoutes(self._app, self)
         self.createInfoRoutes()
-        self.createMobileRoutes()
+        self.mobile_routes = MobileRoutes(self._app, self)
         self.createReaderPostRoutes()
         self.createCarRoutes()
 
@@ -261,42 +262,6 @@ class WebApp(UserManager):
                 "detection_id": detect_id,
                 "parked_spot_id": spot_id
             }
-
-    def createMobileRoutes(self):
-        """All routes requests from the Mobile App"""
-
-        @self._app.route("/mobile/get_spot_coord/<int:spot_id>", methods=["GET"])
-        def get_coord_from_spot_id(spot_id: int):
-            """:returns {latitude: float, longitude: float}"""
-            return self.get_coord_from_spot_id(spot_id)
-
-        @self._app.route("/mobile/get_is_spot_taken/<int:reader_id>")
-        def get_is_spot_taken(reader_id: int) -> bool:
-            """Given a reader_id, returns the status of the spots it can reach.
-            :return {<spot_id>: <status>, <spot_id>: <status>}"""
-            return flask.jsonify(self.is_spot_taken(reader_id))
-
-        @self._app.route("/mobile/get_local_readers", methods=["GET"], defaults={'radius': None, 'latitude': None, 'longitude': None})
-        @self._app.route("/mobile/get_local_readers?radius=<radius>&latitude=<latitude>&longitude=<longitude>", methods=["GET"])
-        def get_local_readers(radius: float, latitude: float, longitude: float):
-            args = request.args
-            try:
-                radius = float(args.get('radius')) if args.get('radius') is not None else None
-                center_latitude = float(args.get('latitude')) if args.get('latitude') is not None else None
-                center_longitude  = float(args.get('longitude')) if args.get('longitude') is not None else None
-            except Exception as err:
-                print(f"Error parsing inputs to /mobile/get_local_readers. Error = {err}")
-                radius = None
-                center_latitude = None
-                center_longitude = None
-            """Given GPS coordiantes and a radius,
-            returns a list of dictionaries containing all readers in that radius"""
-            # if the request is not fully formed, do not accept it
-            if radius is not None and center_latitude is not None and center_longitude is not None:
-                # only return the reader's id and their gps coords that match
-                return flask.jsonify(self.get_readers_in_radius(center_latitude, center_longitude, radius))
-            else:
-                return "Parameters are missing\n"
 
     def createCarRoutes(self):
         @self._app.route("/cars/add_tag", methods=["POST", "GET"], defaults={"tag_id": None})
