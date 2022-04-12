@@ -20,6 +20,7 @@ from userRoutes import UserRoutes
 from mobileRoutes import MobileRoutes
 from readerRoutes import ReaderRoutes
 from carRoutes import CarRoutes
+from cli_parser import CLIParser
 
 class WebApp(UserManager):
     def __init__(self, port: int, is_debug: bool, user: str, pwd: str, db: str, db_host: str):
@@ -153,85 +154,8 @@ class WebApp(UserManager):
 
 if __name__ == '__main__':
 
-    parser = argparse.ArgumentParser(description="Start up a web app GUI for the SpotASpot DB App")
-    parser.add_argument(
-        "-p", "--port",
-        type=int,
-        required=False,
-        help="The port to run the web app from",
-        default=31025
-    )
-
-    # defaults debugMode to false (only true if flag exists)
-    parser.add_argument(
-        "--debugModeOn",
-        action="store_true",
-        dest="debugMode",
-        required=False,
-        help="Use debug mode for development environments",
-        default=False
-    )
-    parser.add_argument(
-        "--debugModeOff",
-        action="store_false",
-        dest="debugMode",
-        required=False,
-        help="Dont use debug mode for production environments",
-        default=True
-    )
-
-    parser.add_argument(
-        "-db_u", "--db_username",
-        required=False,
-        # sometimes this is also root
-        default="capstone",
-        dest="db_user",
-        help="The username for the Database"
-    )
-
-    parser.add_argument(
-        "-pwd", "--password",
-        required=False, # but if not provided asks for input
-        default=None,
-        dest="pwd",
-        help="The password for the Database"
-    )
-    parser.add_argument(
-        "-d", "--db",
-        required=False,
-        default="SpotASpot",
-        dest="db",
-        help="The name of the database to connect to"
-    )
-
-    parser.add_argument(
-        "-dev", "--dev_db",
-        required=False,
-        action="store_const",
-        const="SpotASpot_dev",
-        dest="db",
-        help="Sets the name of the database to connect to as the dev database"
-    )
-
-    parser.add_argument(
-        "-dbh", "--database_host",
-        required=False,
-        default="localhost",
-        dest="db_host",
-        help="Set the host ip address of the database (can be localhost)"
-    )
-
-    # Actually Parse Flags (turn into dictionary)
-    args = vars(parser.parse_args())
-
-    # ask for input if password not given
-    if args["pwd"] == None:
-        pass_msg = "Enter the password for user '"
-        pass_msg += str(args["db_user"])
-        pass_msg += "' for the database '"
-        pass_msg += str(args["db"])
-        pass_msg += "': "
-        args["pwd"] = getpass.getpass(pass_msg)
+    parser = CLIParser()
+    args = parser.args
 
     # start app
     app = WebApp(args["port"], args["debugMode"], args["db_user"], args["pwd"], args["db"], args["db_host"])
