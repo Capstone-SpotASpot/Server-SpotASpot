@@ -1220,13 +1220,13 @@ DELIMITER ;
 -- reader coverage is handled by other insert procedures
 
 -- add 2 spots
-CALL add_spot(42.337864, -71.086680); -- near reader 1
+CALL add_spot(42.339069, -71.087502); -- near reader 1
 CALL add_spot(42.340993, -71.091123); -- near reader 2
 CALL add_spot(42.341339, -71.090871); -- near reader 3
 
 -- add 3 readers (1 will be super far away to "reset" car position)
-CALL add_reader(42.337864, -71.086678, 15, 288); -- DEMO READER
-SET @reader_1_id = (SELECT get_reader_id_from_coords(42.337864, -71.086678));
+CALL add_reader(42.339071, -71.087500, 15, 288); -- DEMO READER
+SET @reader_1_id = (SELECT get_reader_id_from_coords(42.339071, -71.087500));
 CALL add_reader(42.341061, -71.091008, 15, 287);
 SET @reader_2_id = (SELECT get_reader_id_from_coords(42.341061, -71.091008));
 CALL add_reader(42.341311, -71.090847, 15, 287); -- far enough away (~100ft ~= 30m)
