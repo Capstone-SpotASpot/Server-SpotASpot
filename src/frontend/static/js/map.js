@@ -2,10 +2,12 @@
 import { async_get_request, async_post_request } from './utils.js';
 
 $(document).ready(async function() {
-    const coords = await get_gps_coords();
-
     // update it every 2 sec
-    window.setInterval(() => update_markers(coords.lat, coords.long, 10000), 2000);
+    window.setInterval(async () => {
+        const coords = await get_gps_coords();
+        update_markers(coords.lat, coords.long, 10000)
+
+    }, 6000) 
 });
 
 
